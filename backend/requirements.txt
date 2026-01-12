@@ -1,0 +1,15 @@
+fastapi
+#Pythonの非同期webフレームワーク(ASGI)を実行するためのwebサーバ(WSGIは同期処理用)
+uvicorn[standard]
+#ASGIツールキット(ルーティング、Websocket、セッション管理など)
+starlette
+#アプリケーションの設定(環境変数)管理
+pydantic-settings
+#ORMで書けるみたいです。(FastAPIではスタンダードみたいなので入れました。いらなかったら消してください。)
+sqlalchemy
+#MySQLに非同期で接続するためのドライバ
+aiomysql
+#データの署名(改ざん検知)
+itsdangerous
+#暗号化・復号化
+cryptography
