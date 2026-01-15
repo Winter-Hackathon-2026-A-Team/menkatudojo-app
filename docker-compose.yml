@@ -22,6 +22,41 @@ services:
       timeout: 5s
       retries: 5
 
+  minio:
+    #dockerイメージ
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    ports:
+      #API用
+      - "9000:9000"
+      #管理者コンソール用
+      - "9001:9001"
+    environment:
+      #管理者設定
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-password1234}
+    volumes:
+      - minio_data:/data
+    command: server --console-address ":9001" /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/healthcheck/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  create_buckets:
+    #minioをコマンドラインで操作するための公式ツール
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "/usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER:-admin} ${MINIO_ROOT_PASSWORD:-password1234};
+      /usr/bin/mc mb --ignore-existing myminio/${MINIO_BUCKET_NAME:-dev-bucket};
+      /usr/bin/mc anonymous set public myminio/${MINIO_BUCKET_NAME:-dev-bucket};
+      exit 0;
+      "
+
   backend:
     build:
       context: .
@@ -40,12 +75,18 @@ services:
       - "8000:8000"
     environment:
       - APP_ENV=dev
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-admin}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-password1234}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-dev-bucket}
       - SECRET_KEY=${SECRET_KEY}
       - CORS_ORIGINS=${CORS_ORIGINS}
       - DATABASE_URL=mysql+aiomysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST:-db}:${MYSQL_PORT:-3306}/${MYSQL_DATABASE}
     depends_on:
       db:
         #dbがhealthyになるまで起動を待つ
+        condition: service_healthy
+      minio:
         condition: service_healthy
 
   frontend:
@@ -77,3 +118,4 @@ services:
 
 volumes:
   db_data:
+  minio_data:
