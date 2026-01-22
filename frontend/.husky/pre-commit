@@ -1,1 +1,4 @@
-npx lint-staged
+#!/usr/bin/env sh
+
+# 1. frontendディレクトリに移動し、そこでnpx lint-stagedを叩く
+cd frontend && npx lint-staged
