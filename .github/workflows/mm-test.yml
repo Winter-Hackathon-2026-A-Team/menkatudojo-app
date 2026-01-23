@@ -1,0 +1,21 @@
+name: Mattermost webhook test (manual)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post hello to Mattermost
+        env:
+          MM_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+        run: |
+          set -eu
+          if [ -z "${MM_WEBHOOK:-}" ]; then
+            echo "ERROR: Secret MATTERMOST_WEBHOOK_URL is not set." >&2
+            exit 1
+          fi
+          curl -fsS -X POST -H 'Content-Type: application/json' \
+            -d '{"text":"hello from GitHub Actions (manual test)"}' \
+            "$MM_WEBHOOK"
