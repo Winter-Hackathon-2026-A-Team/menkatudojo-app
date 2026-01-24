@@ -82,12 +82,20 @@ GID=1000
 ```
 docker compose up --build
 ```
+もしくは
+```
+make build
+```
 - バックエンド : http://localhost:8000
 - フロントエンド : http://localhost:3000<br></br>
 
 2回目以降
 ```
 docker compose up -d
+```
+もしくは、
+```
+make up
 ```
 # 疎通確認
 ## ①バックエンドの疎通確認
@@ -102,10 +110,23 @@ docker compose up -d
 ブラウザで確認
 - URL : http://localhost:3000
 - 結果 : Vite + React、API Status:ok、db Version:8.4.7が中央に表示
+## ④Minioの疎通確認
+コマンドプロンプトで疎通確認。
+```
+make minio-ls
+```
+結果<br>
+docker exec minio sh -c "mc alias set check http://localhost:9000 \$MINIO_ROOT_USER \$MINIO_ROOT_PASSWORD && mc ls check"
+Added `check` successfully.
+
 ## ④データベース直接操作
 MySQLの中身を直接確認・操作する手順<br>
 ```
 docker exec -it mysql_db mysql -u　dev_user -p[.envで設定したPW]
+```
+もしくは
+```
+make db
 ```
 ログアウト
 ```
@@ -114,4 +135,8 @@ exit
 ## ⑤終了時のdockerコマンド
 ```
 docker compose down
+```
+もしくは、
+```
+make down
 ```
