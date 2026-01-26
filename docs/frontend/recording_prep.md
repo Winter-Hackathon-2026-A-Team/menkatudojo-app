@@ -10,6 +10,8 @@
   - アバター（フィードバックを受ける相手）の選択
 
 ### b. 状態管理
+- [globalState] globalMessage: string | null, error | success | info | null...全体表示用のメッセージ
+
 - [LocalState] videoStatus: checking（初期値） | ready | error ...video起動状態の管理
 - [LocalState] audioStatus: checking（初期値） | ready | error ...マイク起動状態の管理
 - [LocalState] stream: MediaStream | null ...カメラ・音声のメディアオブジェクト
@@ -48,7 +50,7 @@
   - videoStatus, audioStatusをreadyにセット
 - 失敗:
   - videoStatus, audioStatusをerrorにセット
-  - errorMessageに内容を出力（ユーザーが拒否、接続失敗）
+  - globalMessageに内容を出力（ユーザーが拒否、接続失敗）
 
 
 ### c-3. 関数

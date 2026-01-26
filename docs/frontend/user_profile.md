@@ -66,6 +66,7 @@
   - 変更ボタンを押下、反映される
 
 ### b. 状態管理
+- [globalState] globalMessage: string | null, error | success | info | null...全体表示用のメッセージ
 - [GlobalState] user: user情報（初期値：null）
 - [GlobalState] authStatus: initializing（初期値）| authenticated（成功） | unAuthenticated（否認） | error（通信エラー） ...認証の状態
 - [LocalState] status: loading（初期値） | error ...通信状態の管理

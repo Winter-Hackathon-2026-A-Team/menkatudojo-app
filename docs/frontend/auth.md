@@ -49,13 +49,13 @@
 - 認証成功後、ダッシュボードへ遷移
 
 ### b. 状態管理
+- [globalState] globalMessage: string | null, error | success | info | null...全体表示用のメッセージ
 - [GlobalState] user: user情報（初期値：null）
 - [GlobalState] authStatus: initializing（初期値）| authenticated（成功） | unAuthenticated（否認） | error（通信エラー） ...認証の状態
 - [LocalState] status: loading（初期値） | error ...通信状態の管理
 - [LocalState] isSubmitting: boolean（初期値false）...POST中のみtrue
 - [LocalState] formData: { "email": "", "password": ""} ...入力内容の保持
 - [LocalState] errorMessage: Record<string> | null ...バリデーション等の項目別エラー
-- [LocalState] globalError: string | null ...システムエラー等の全体エラー
 
 ### c. 関数
 - 関数名: handleLogin
@@ -73,7 +73,7 @@
 ### d. ロジック
 - 初期化：
   - status: loadingにセット
-  - errorMessage, globalErrorをクリア
+  - errorMessage, globalMessageをクリア
   - isSubmitting: trueにセットしボタンを連打防止
 - バリデーション（front側制御）
   - formData: 未入力項目がある場合 | emailの形式不正 | passwordが8文字以下
@@ -86,11 +86,11 @@
   - 注）CSRFtokenが更新される
 - 失敗：
   - 通信エラー：
-    - status:error, globalError: "サーバーで問題が発生しました..." をセット
+    - status:error, globalMessage: "サーバーで問題が発生しました..." をセット
     - isSubmitting: falseにセット、ボタンを押せるようにする
     - formDataの値を保持し処理を終了
   - 認証失敗（401）：
-    - status:error, globalError: "emailかpasswordのいずれかが不一致..." をセット
+    - status:error, globalMessage: "emailかpasswordのいずれかが不一致..." をセット
     - isSubmitting: falseにセット、ボタンを押せるようにする
     - formDataの値を保持し処理を終了
 
@@ -103,13 +103,13 @@
 - 認証成功後、ダッシュボードへ遷移
 
 ### b. 状態管理
+- [globalState] globalMessage: string | null, error | success | info | null...全体表示用のメッセージ
 - [GlobalState] user: user情報（初期値：null）
 - [GlobalState] authStatus: initializing（初期値）| authenticated（成功） | unAuthenticated（否認） | error（通信エラー） ...認証の状態
 - [LocalState] status: loading（初期値） | error ...通信状態の管理
 - [LocalState] formData: { "username": "", "email": "", "confirmEmail": "", "password": "", "confirmPassword": "" } ...入力内容の保持
 - [LocalState] isSubmitting: boolean（初期値false）...POST中のみtrue
 - [LocalState] errorMessage: Record<string> | null ...バリデーション等の項目別エラー
-- [LocalState] globalError: string | null ...システムエラー等の全体エラー
 
 ### c. 関数
 - 関数名：handleSignup
@@ -136,7 +136,7 @@
 - 初期化：
   - status: loadingにセット
   - isSubmitting: trueにセットしボタンを連打防止
-  - errorMessage, globalErrorをクリア
+  - errorMessage, globalMessageをクリア
 - バリデーション（front側制御）
   - formData: 未入力項目がある場合 | usernameが100文字以上 | emailの形式不正 | passwordが8文字以下
     - status: error, errorMessage: <string>をセット
@@ -148,12 +148,12 @@
   - 注）CSRFtokenが更新される
 - 失敗：
   - 通信エラー：
-    - status:error, globalError: "サーバーで問題が発生しました..." をセットし処理を終了
+    - status:error, globalMessage: "サーバーで問題が発生しました..." をセットし処理を終了
     - isSubmitting: falseにセット、ボタンを押せるようにする
     - formDataの値を保持し処理を終了
     - 注）もしくはindexページに飛ばすか？UXは要検討
   - Email重複（409）, バリデーションエラー（422）：
-    - status:error, errorMessage: <string> を出力
+    - status:error, globalMessage: <string> を出力
     - isSubmitting: falseにセット、ボタンを押せるようにする
     - formDataの値を保持し処理を終了
 

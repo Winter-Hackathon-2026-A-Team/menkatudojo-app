@@ -12,6 +12,8 @@
   - すべてのカテゴリからランダムに一つ質問を選択して次画面へ遷移
 
 ### b. 状態管理
+- [globalState] globalMessage: string | null, error | success | info | null...全体表示用のメッセージ
+
 - [LocalState] status: idle | loading（初期値） | error ...通信状態の管理
 - [LocalState] questions: puestions[] (初期値：[]) ...APIから取得した質問リスト
 - [LocalState] selectedQuestionId: selectedQuestionId() (初期値：null) ...どの質問に☑がついているか
