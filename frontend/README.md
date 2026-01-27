@@ -1,16 +1,18 @@
-# React + Vite
+### 使用技術と選定理由
+- Vite:修正がすぐに画面に反映され、高速な開発環境が得られるため
+- Axios:baseURL等、HTTP通信の共通設定をカプセル化して保守性を高めるため
+- Tailwind Css:一貫性のあるデザインを迅速に実装するため
+- MUI (Material UI):Figmaで構築したデザインを正確に実装するため
+- ESLint／Prettier：コードの品質の担保、書式の自動的な統一
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### ディレクトリ構成と役割
+- api/: API通信の基盤と各エンドポイントの定義
+- hooks/: 複数のコンポーネントで再利用するカスタムフック（状態管理や副作用の分離）
+- utils/: 汎用的な関数（文字列整形など）
+- assets/: 画像、フォント、アイコンなどの静的リソース
+- contexts/: 認証状態などグローバルな状態管理
+- pages/: ルーティングと対応する各画面のコンポーネント
+- theme/: MUIのテーマの一元管理
+- types/: TypeScriptの型定義
+ 備考：
+- 今後の構成によってはbaseURLを.envから取得、およびDockerfileの修正を検討 

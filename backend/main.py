@@ -69,11 +69,11 @@ app.add_middleware(
 )
 
 #ヘルスチェック
-@app.get("/health")
+@app.get("/api/health")
 def health_check():
     return {"status": "ok", "env": os.getenv("APP_ENV", "dev")}
 
-@app.get("/db-test")
+@app.get("/api/db-test")
 async def db_test(db: AsyncSession = Depends(get_db)):
     #DB接続とバージョン情報の取得確認
     result = await db.execute(text("SELECT VERSION()"))
