@@ -1,22 +1,22 @@
+import { TopPage } from '@/pages/TopPage';
 import { HealthCheckPage } from '@/pages/dev/HealthCheckPage';
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { theme } from './theme/theme';
 
-const HomePage = () => (
-  <div>
-    <h1 className="text-3xl font-bold text-blue-600">Home</h1>
-    <Link to="/dev/health">API・DB疎通確認（Health Check）</Link>
-  </div>
-);
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/dev/health" element={<HealthCheckPage />} />
-      </Routes>
-    </BrowserRouter>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<TopPage />} />
+          <Route path="/dev/health" element={<HealthCheckPage />} />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
-
 export default App;
