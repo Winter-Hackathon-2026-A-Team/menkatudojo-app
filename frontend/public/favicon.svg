@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect
+    x="0"
+    y="0"
+    width="64"
+    height="64"
+    rx="10"
+    fill="#2E6B5A"
+  />
+  <text
+    x="32"
+    y="44"
+    text-anchor="middle"
+    font-size="36"
+    font-weight="700"
+    fill="#FFFFFF"
+    font-family="Hiragino Mincho ProN, Yu Mincho, serif"
+  >
+    面
+  </text>
+</svg>
