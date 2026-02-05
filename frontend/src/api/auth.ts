@@ -6,22 +6,20 @@ export const authApi = {
   // 1. 認証初期化
   // authApi モック内
   initialize: async (): Promise<AuthResponse> => {
-    console.log('--- Mock Initialize API ---');
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     // 開発中、常にログイン状態で始めたい場合はここを有効にする
-    // return {
-    //   userId: '1',
-    //   username: 'Test_User',
-    // };
+    return {
+      userId: '1',
+      username: 'Test_User',
+    };
 
     // 未ログイン状態をテストしたい場合は以下を throw する
-    throw { response: { status: 401 } };
+    // throw { response: { status: 401 } };
   },
 
   // 2. ログイン
   login: async (email: string, password: string): Promise<AuthResponse> => {
-    console.log('--- Mock Login API ---', { email, password });
     await new Promise((resolve) => setTimeout(resolve, 800)); // 通信待機
 
     // 1. サーバーエラー（500）
