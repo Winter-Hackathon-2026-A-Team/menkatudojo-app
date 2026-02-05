@@ -114,7 +114,7 @@ export const QuestionSelectionPage = () => {
           variant="contained"
           component={RouterLink}
           disabled={selectedId === null}
-          to="/pre-Answers"
+          to={selectedId !== null ? `/authority-check/${selectedId}` : '#'}
           size="large"
           startIcon={<VideocamOutlinedIcon />}
           sx={{ minWidth: 230 }}

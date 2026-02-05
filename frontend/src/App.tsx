@@ -1,6 +1,7 @@
 import { AuthGuard } from '@/components/AuthGuard';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { MessageProvider } from '@/contexts/MessageContext';
+import { AuthorityCheckPage } from '@/pages/AuthorityCheckPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { QuestionSelectionPage } from '@/pages/QuestionSelectionPage';
@@ -32,6 +33,7 @@ function App() {
                 <Route element={<AuthGuard children={<Outlet />} />}>
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/questions" element={<QuestionSelectionPage />} />
+                  <Route path="/authority-check/:questionId" element={<AuthorityCheckPage />} />
                 </Route>
               </Routes>
             </BrowserRouter>
