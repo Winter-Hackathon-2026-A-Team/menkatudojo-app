@@ -1,14 +1,18 @@
 // src/pages/DashboardPage.tsx
-import { useAuth } from '@/contexts/AuthContext';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { Box, Button, Container } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 
 export const DashboardPage = () => {
-  const { user, status, logout } = useAuth();
-
   return (
-    <div>
-      <h1>ダッシュボード</h1>
-      <p>{user?.username}さんのダッシュボード</p>
-      <button onClick={logout}>ログアウト</button>
-    </div>
+    <MainLayout>
+      <Container>
+        <Box>
+          <Button variant="contained" component={RouterLink} to="/questions">
+            練習を始める
+          </Button>
+        </Box>
+      </Container>
+    </MainLayout>
   );
 };
