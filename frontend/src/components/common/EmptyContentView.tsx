@@ -3,7 +3,7 @@ import { Box, Button, Typography } from '@mui/material';
 import { MainLayout } from '../layout/MainLayout';
 
 interface Props {
-  title?: string;C
+  title?: string;
   message?: string;
   onRetry?: () => void;
   actionText?: string;
