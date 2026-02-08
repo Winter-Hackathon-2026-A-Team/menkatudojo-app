@@ -9,6 +9,9 @@ export const theme = createTheme({
     secondary: {
       main: '#5D4037',
     },
+    error: {
+      main: '#B22222',
+    },
     background: {
       default: '#FAF9F6', // 画面全体のバックグラウンド
       paper: '#E8F5E9', // カード等の背景色（薄い緑）

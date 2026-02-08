@@ -16,11 +16,11 @@ import {
 
 interface QuestionListProps {
   groupedQuestions: Record<string, Question[]>;
-  selectedId: number | null;
+  questionId: number | null;
   onSelect: (id: number) => void;
 }
 
-export const QuestionList = ({ groupedQuestions, selectedId, onSelect }: QuestionListProps) => {
+export const QuestionList = ({ groupedQuestions, questionId, onSelect }: QuestionListProps) => {
   return (
     <>
       {Object.entries(groupedQuestions).map(([category, items]) => (
@@ -43,7 +43,7 @@ export const QuestionList = ({ groupedQuestions, selectedId, onSelect }: Questio
                     <ListItemIcon>
                       <Checkbox
                         edge="start"
-                        checked={selectedId === q.questionId}
+                        checked={questionId === q.questionId}
                         tabIndex={-1}
                         disableRipple
                       />
