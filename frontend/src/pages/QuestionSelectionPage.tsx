@@ -71,7 +71,7 @@ export const QuestionSelectionPage = () => {
             <Button
               onClick={() => navigate(-1)}
               startIcon={<ArrowBackIcon />}
-              sx={{ color: 'text.secondary' }}
+              sx={{ color: 'text.primary' }}
             ></Button>
             <Box
               sx={{
