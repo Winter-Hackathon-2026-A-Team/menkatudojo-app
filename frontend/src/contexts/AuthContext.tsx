@@ -1,4 +1,5 @@
 import { authApi } from '@/api/auth';
+import { LoadingView } from '@/components/common/LoadingView';
 import { AuthState } from '@/types/auth';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
@@ -59,7 +60,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ ...state, login, signup, logout, initializeAuth }}>
-      {children}
+      {/* statusがinitializingならLoadingを返し、それ以外でchildrenを返す */}
+      {state.status === 'initializing' ? <LoadingView /> : children}
     </AuthContext.Provider>
   );
 };
