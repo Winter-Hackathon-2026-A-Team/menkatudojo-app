@@ -16,6 +16,7 @@
   - `LoadingView`: 読み込み中画面のUI。
 - `/features/`
   - `questions/QuestionList`：質問選択画面のメインUI（アコーディオン）
+  - `authority-check/PersonalitySelector`：アバター選択UI
 - `/layout/`
   - `GlobalMessageBar`：全ページ共通のメッセージエリアのUI
   - `MainLayout`：メインレイアウト（ヘッダー・共通メッセージエリア・各ページのコンテンツの枠組み）
@@ -23,7 +24,9 @@
 
 4. `@/hooks/`
 
-- `useQuestions`：質問取得後の状態管理とデータの整形
+- `useQuestions`： 質問取得後の状態管理とデータの整形
+- `useAudioAnalyser`： Web Audio APIを使って音量検知
+- `useMediaStream`： getUserMediaを使ってカメラ・マイクのストリームを取得、useAudioAnalyserを呼び出す
 
 5. `@/pages/`: 各ルートに対応する最上位コンポーネント。
 
@@ -32,6 +35,8 @@
 - `SignupPage`：新規登録
 - `DashboardPage`：ダッシュボード
 - `QuestionSelectionPage`：質問選択
+- `AuthorityCheckPage`：デバイス権限チェック・アバター選択
+- `InterviewSessionPage`：面接練習録画
 - `dev/HealthCheckPage`：backend, DBとの疎通確認
 
 6. `@/theme/`: デザインシステム（MUI）のテーマ定義。

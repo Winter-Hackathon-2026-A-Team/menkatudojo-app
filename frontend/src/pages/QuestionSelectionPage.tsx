@@ -35,11 +35,11 @@ export const QuestionSelectionPage = () => {
     }
   }, [isError, isCriticalError, error, showMessage]);
 
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [questionId, setQuestionId] = useState<number | null>(null);
 
   // 関数：質問を選択する
   const handleSelect = (id: number) => {
-    setSelectedId((prev) => (prev === id ? null : id));
+setQuestionId((prev) => (prev === id ? null : id));
   };
 
   const navigate = useNavigate();
@@ -71,7 +71,7 @@ export const QuestionSelectionPage = () => {
             <Button
               onClick={() => navigate(-1)}
               startIcon={<ArrowBackIcon />}
-              sx={{ color: 'text.secondary' }}
+              sx={{ color: 'text.primary' }}
             ></Button>
             <Box
               sx={{
@@ -94,7 +94,7 @@ export const QuestionSelectionPage = () => {
       />
       <QuestionList
         groupedQuestions={groupedQuestions}
-        selectedId={selectedId}
+        questionId={questionId}
         onSelect={handleSelect}
       />
 
@@ -113,8 +113,8 @@ export const QuestionSelectionPage = () => {
         <Button
           variant="contained"
           component={RouterLink}
-          disabled={selectedId === null}
-          to={selectedId !== null ? `/authority-check/${selectedId}` : '#'}
+          disabled={questionId === null}
+          to={questionId !== null ? `/authority-check/${questionId}` : '#'}
           size="large"
           startIcon={<VideocamOutlinedIcon />}
           sx={{ minWidth: 230 }}

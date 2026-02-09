@@ -5,6 +5,7 @@ import { AuthorityCheckPage } from '@/pages/AuthorityCheckPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { QuestionSelectionPage } from '@/pages/QuestionSelectionPage';
+import { InterviewSessionPage } from '@/pages/InterviewSessionPage';
 import { SignupPage } from '@/pages/SignupPage';
 import { TopPage } from '@/pages/TopPage';
 import { HealthCheckPage } from '@/pages/dev/HealthCheckPage';
@@ -34,6 +35,7 @@ function App() {
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/questions" element={<QuestionSelectionPage />} />
                   <Route path="/authority-check/:questionId" element={<AuthorityCheckPage />} />
+                  <Route path="/interview/session/:questionId" element={<InterviewSessionPage />} />
                 </Route>
               </Routes>
             </BrowserRouter>
