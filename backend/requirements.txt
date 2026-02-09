@@ -13,3 +13,8 @@ aiomysql
 itsdangerous
 #暗号化・復号化
 cryptography
+
+pydantic[email]
+
+passlib[argon2]
+argon2-cffi

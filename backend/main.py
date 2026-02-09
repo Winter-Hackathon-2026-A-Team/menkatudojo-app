@@ -4,12 +4,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from routers.auth import router as auth_router
 
 import os
 import logging
+import models
 
 from config.settings import settings
-from database import engine, get_db
+from database import engine, get_db, Base
 
 #開発か本番かをチェックし、ログを切り分ける
 log_level = logging.DEBUG if settings.DEBUG else logging.INFO
@@ -29,6 +31,11 @@ async def lifespan(app: FastAPI):
         async with engine.begin() as conn:
             #ヘルスチェック(SELECT 1)で疎通確認
             await conn.execute(text("SELECT 1"))
+
+            # 開発環境(dev)の場合、モデルのテーブルを自動作成
+            if os.getenv("APP_ENV", "dev") == "dev":
+                await conn.run_sync(models.Base.metadata.create_all)
+
         logger.info("Database connection successful.")
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
@@ -67,6 +74,9 @@ app.add_middleware(
     #HTTPヘッダーのカスタムヘッダーを許可。フロントで自由に設定できるように*としてますが、本番環境に上げる時は要相談。
     allow_headers=["*"],
 )
+
+#認証ルーターを登録
+app.include_router(auth_router)
 
 #ヘルスチェック
 @app.get("/api/health")
