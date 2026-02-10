@@ -3,6 +3,7 @@ import { PersonalitySelector } from '@/components/features/authority-check/Perso
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMessage } from '@/contexts/MessageContext';
+import { useAudioAnalyser } from '@/hooks/useAudioAnalyser';
 import { useMediaStream } from '@/hooks/useMediaStream';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MicIcon from '@mui/icons-material/Mic';
@@ -15,7 +16,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 export const AuthorityCheckPage = () => {
   const navigate = useNavigate();
   const { questionId } = useParams(); // URLからquestionIdを取得
-  const { videoRef, mediaState } = useMediaStream();
+  const { videoRef, setupDevices, mediaState } = useMediaStream();
+  const { audioLevel, startAnalysis, stopAnalysis } = useAudioAnalyser();
   const { showMessage } = useMessage(); // globalMessageの関数を取得
   const hasNotifiedRef = useRef(false); // メッセージ出力が多重発火しないようにフラグを作る
 
@@ -37,6 +39,22 @@ export const AuthorityCheckPage = () => {
     setSelectedPersonalityId(id);
     localStorage.setItem('selectedPersonalityId', String(id));
   };
+
+  useEffect(() => {
+    const init = async () => {
+      // 1. ストリームを取得
+      const stream = await setupDevices();
+      // 2. 取得できたら解析を開始
+      if (stream) {
+        startAnalysis(stream);
+      }
+    };
+    init();
+
+    return () => {
+      stopAnalysis(); // 画面を離れる時に解析を止める
+    };
+  }, [setupDevices, startAnalysis, stopAnalysis]);
 
   // デバイス準備完了時にglobalMessageに出力
   useEffect(() => {
@@ -126,14 +144,14 @@ export const AuthorityCheckPage = () => {
               <Stack direction="row" spacing={2} alignItems="center" sx={{ px: 1 }}>
                 {/* 音量がある時だけアイコンに色がつく */}
                 <MicIcon
-                  color={mediaState.audioLevel > 5 ? 'primary' : 'disabled'}
+                  color={audioLevel > 5 ? 'primary' : 'disabled'}
                   sx={{ transition: 'color 0.2s' }}
                 />
 
                 <Box sx={{ flexGrow: 1 }}>
                   <LinearProgress
                     variant="determinate" // 数値を直接指定できる
-                    value={mediaState.audioLevel}
+                    value={audioLevel}
                     sx={{
                       height: 10,
                       borderRadius: 5,
@@ -141,7 +159,7 @@ export const AuthorityCheckPage = () => {
                       '& .MuiLinearProgress-bar': {
                         borderRadius: 5,
                         // 80%を超えたら警告色（赤）にするリスク管理
-                        bgcolor: mediaState.audioLevel > 80 ? 'error.main' : 'primary.main',
+                        bgcolor: audioLevel > 80 ? 'error.main' : 'primary.main',
                         transition: 'transform 0.1s linear', // 動きを滑らかに
                       },
                     }}

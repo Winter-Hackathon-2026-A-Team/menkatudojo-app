@@ -76,7 +76,6 @@
   - 両方成功:
     - 両方を内包するstreamを作成
     - videoStatus, audioStatusをreadyにセット
-    - 音量監視処理を開始（startAudioMonitaring）
     - globalMessageに準備完了アナウンスを流す
   - 失敗（両方・片方）:
     - 失敗したデバイスのStatusをerrorにセット
@@ -97,17 +96,16 @@
 
 - 処理フロー:
   - streamがあれば全トラック停止
-  - 音量監視を停止(stopAnalysis)
 
 #### startAnalysis(stream)
 
 - 役割: マイク音量のリアルタイム監視
-- setupDevicesの中で呼び出す
 
 - 処理フロー:
   - Web Audio APIを使用
   - audioLevelを0-100の範囲で更新
   - requestAnimationFrameでループ
+  - アンマウント時は処理を終了
 
 #### handleRetry()
 
@@ -126,7 +124,6 @@
   - videoStatusとaudioStatusがreadyの場合に、練習開始ボタンをenabled
   - 上記以外は練習開始ボタンをdisabled
   - ボタン押下で次画面へ遷移（質問IDをURLパラメータに保持したまま）＋streamをtrack.stop()
-
 
 ### d. ライフサイクル
 
