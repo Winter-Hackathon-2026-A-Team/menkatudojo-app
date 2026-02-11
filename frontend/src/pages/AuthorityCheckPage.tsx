@@ -2,6 +2,7 @@
 import { PersonalitySelector } from '@/components/features/authority-check/PersonalitySelector';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PERSONALITIES } from '@/constants/personalities'; // 定数をインポート
 import { useMessage } from '@/contexts/MessageContext';
 import { useAudioAnalyser } from '@/hooks/useAudioAnalyser';
 import { useMediaStream } from '@/hooks/useMediaStream';
@@ -29,15 +30,22 @@ export const AuthorityCheckPage = () => {
     navigate(`/interview/session/${questionId}`);
   };
 
-  // アバターの選択（LocalStorageに保存）
-  const [selectedPersonalityId, setSelectedPersonalityId] = useState<number>(() => {
-    const saved = localStorage.getItem('selectedPersonalityId');
-    return saved ? Number(saved) : 1;
+  // 1. 保存されているavatarIdを取得。なければ定数の先頭を採用
+  const [selectedAvatarId, setSelectedAvatarId] = useState<number>(() => {
+    const saved = localStorage.getItem('selectedAvatarId');
+    // Numberで変換し、失敗(NaN)したら初期値を採用
+    const numId = saved ? Number(saved) : NaN;
+    return !isNaN(numId) ? numId : PERSONALITIES[0].avatarId;
   });
 
-  const handlePersonalitySelect = (id: number) => {
-    setSelectedPersonalityId(id);
-    localStorage.setItem('selectedPersonalityId', String(id));
+  // 2. 現在選択されている師範のオブジェクトを特定（UIでの表示用）
+  const selectedPersonality =
+    PERSONALITIES.find((p) => p.avatarId === selectedAvatarId) || PERSONALITIES[0];
+
+  // 3. アバター選択時のハンドラー
+  const handleAvatarSelect = (id: number) => {
+    setSelectedAvatarId(id); // 状態（number）を更新
+    localStorage.setItem('selectedAvatarId', String(id)); // ストレージ（string）に保存
   };
 
   useEffect(() => {
@@ -180,8 +188,9 @@ export const AuthorityCheckPage = () => {
                 フィードバックをもらう師範を選択してください。
               </Typography>
               <PersonalitySelector
-                selectedPersonalityId={selectedPersonalityId}
-                onSelect={handlePersonalitySelect}
+                personalities={PERSONALITIES}
+                selectedAvatarId={selectedAvatarId} // 現在選択中のIDを渡す
+                onSelect={handleAvatarSelect} // IDを更新する関数を渡す
               />
             </Stack>
           </Box>

@@ -30,7 +30,7 @@
 - audioLevel: number(0-100), 初期値: 0
   - マイク音量の視覚化用
 
-- selectedPersonalityId: number（初期値: localStorageから取得、なければ1）
+- selectedAvatarId: number（初期値: localStorageから取得、なければ1）
   - 選択されているアバターID
 
 - MediaErrorType: object | null（正常時）
@@ -49,19 +49,19 @@
 
 ### c. 関数
 
-#### handlePersonalitySelect(personalityId)
+#### handleAvatarSelect(avatarId)
 
 - 役割：選択されたアバターIDをlocalstorageに保存
 - 処理:
-  - selectedPersonalityIdを更新
-  - localStorageにpersonalityIdを保存
+  - selectedAvatarIdを更新
+  - localStorageにavatarIdを保存
 
 - 処理フロー:
   - 初期化：
-    - localstorageからpersonalityIdを取得
-    - 取得できた場合はその値、nullの場合は1をselectedPersonalityIdにセット
+    - localstorageからavatarIdを取得
+    - 取得できた場合はその値、nullの場合は1をselectedAvatarIdにセット
   - 選択:
-    - ユーザーがアバターを選択→handlePersonalitySelectを実行（localstorageに保存）
+    - ユーザーがアバターを選択→handleAvatarSelectを実行（localstorageに保存）
 
 #### setupDevices()
 
@@ -129,7 +129,7 @@
 
 #### マウント時
 
-- localStorageからpersonalityId読み込み
+- localStorageからavatarId読み込み
 - setupDevices()実行
 
 #### アンマウント時

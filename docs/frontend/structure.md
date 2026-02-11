@@ -1,6 +1,11 @@
 #### 1. ディレクトリ構成と責務
 
 1. `@/api/`: 外部通信の実装。Backend（FastAPI）とのインターフェース。
+
+- `client`: axios設定
+- `auth`: 認証関連のAPI
+- `questions`: 質問選択関連のAPI
+
 2. `@/contexts/`: アプリケーション全体のグローバルな状態（認証・メッセージ等）を管理。
 
 - `AuthContext`: ログイン状態の管理。アプリ起動時の初期化（`initialize`）
@@ -22,13 +27,17 @@
   - `MainLayout`：メインレイアウト（ヘッダー・共通メッセージエリア・各ページのコンテンツの枠組み）
   - `PageHeader`：各ページのアナウンスエリアの枠組み
 
-4. `@/hooks/`
+4. `@/constants/`
+
+- `personalities`: アバター情報をハードコード
+
+5. `@/hooks/`
 
 - `useQuestions`： 質問取得後の状態管理とデータの整形
 - `useAudioAnalyser`： Web Audio APIを使って音量検知
 - `useMediaStream`： getUserMediaを使ってカメラ・マイクのストリームを取得、useAudioAnalyserを呼び出す
 
-5. `@/pages/`: 各ルートに対応する最上位コンポーネント。
+6. `@/pages/`: 各ルートに対応する最上位コンポーネント。
 
 - `TopPage`：ランディングページ
 - `LoginPage`：ログイン
@@ -39,11 +48,11 @@
 - `InterviewSessionPage`：面接練習録画
 - `dev/HealthCheckPage`：backend, DBとの疎通確認
 
-6. `@/theme/`: デザインシステム（MUI）のテーマ定義。
+7. `@/theme/`: デザインシステム（MUI）のテーマ定義。
 
-7. `@/types/`: TypeScript型定義
+8. `@/types/`: TypeScript型定義
 
-8. `@/utils/`:
+9. `@/utils/`:
 
 - `errorHandlers`：backendからのレスポンスコード→ユーザーへのメッセージの変換
 

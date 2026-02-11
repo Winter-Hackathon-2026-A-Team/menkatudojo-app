@@ -1,36 +1,32 @@
 import { Personality } from '@/types/personality';
 import { Avatar, Card, CardActionArea, Grid, Radio, Typography } from '@mui/material';
 
+// 1. 親から渡されるデータの「型」を定義する
 interface Props {
-  selectedPersonalityId: number;
-  onSelect: (id: number) => void;
+  personalities: Personality[]; // 師範リスト
+  selectedAvatarId: number; // 選択中の数値
+  onSelect: (id: number) => void; // 選択した時の動き
 }
 
-const PERSONALITIES: Personality[] = [
-  { id: 1, name: '優しい', image: '/avatar1.png' },
-  { id: 2, name: '熱血', image: '/avatar2.png' },
-  { id: 3, name: '論理的', image: '/avatar3.png' },
-];
-
-export const PersonalitySelector = ({ selectedPersonalityId, onSelect }: Props) => {
+export const PersonalitySelector = ({ personalities, selectedAvatarId, onSelect }: Props) => {
   return (
     <Grid container direction="row" sx={{ height: '100%' }} spacing={1}>
-      {PERSONALITIES.map((p) => (
-        <Grid size={{ xs: 4 }} key={p.id}>
+      {personalities.map((p) => (
+        <Grid size={{ xs: 4 }} key={p.avatarId}>
           <Card
             variant="outlined"
             sx={{
-              bgcolor: selectedPersonalityId === p.id? '#FFFFFF' : 'background.paper',
-              borderColor: selectedPersonalityId === p.id ? 'primary.main' : 'divider',
-              borderWidth: selectedPersonalityId === p.id ? 2 : 1,
-              boxShadow: selectedPersonalityId === p.id ? 4 : 0,
+              bgcolor: selectedAvatarId === p.avatarId ? '#FFFFFF' : 'background.paper',
+              borderColor: selectedAvatarId === p.avatarId ? 'primary.main' : 'divider',
+              borderWidth: selectedAvatarId === p.avatarId ? 2 : 1,
+              boxShadow: selectedAvatarId === p.avatarId ? 4 : 0,
               transition: 'background-color 0.2s, border-color 0.2s',
               height: '100%',
               display: 'flex',
             }}
           >
             <CardActionArea
-              onClick={() => onSelect(p.id)}
+              onClick={() => onSelect(p.avatarId)}
               sx={{
                 p: 1,
                 textAlign: 'center',
@@ -43,11 +39,11 @@ export const PersonalitySelector = ({ selectedPersonalityId, onSelect }: Props) 
                 {p.name}
               </Typography>
               <Avatar
-                src={p.image}
+                src={p.avatarUrl}
                 variant="rounded"
                 sx={{ flexGrow: 1, width: '100%', height: 'auto' }}
               />
-              <Radio checked={selectedPersonalityId === p.id} size="small" />
+              <Radio checked={selectedAvatarId === p.avatarId} size="small" />
             </CardActionArea>
           </Card>
         </Grid>
