@@ -4,6 +4,9 @@ from passlib.context import CryptContext
 def generate_session_id() -> str:
     return secrets.token_urlsafe(32)
 
+def generate_csrf_token() -> str:
+    return secrets.token_urlsafe(32)
+
 pwd_context = CryptContext(
     schemes=["argon2"],
     deprecated="auto",

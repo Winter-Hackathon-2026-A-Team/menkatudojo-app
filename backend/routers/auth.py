@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Cookie
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from sqlalchemy import text
+from core.security import generate_csrf_token
+from core.errors import EMAIL_ALREADY_EXISTS
 
 from database import get_db
 from config.settings import settings
@@ -35,11 +36,17 @@ def clear_session_cookie(response: Response):
 async def signup(payload: SignupRequest, response: Response, db: AsyncSession = Depends(get_db)):
     user_svc = UserService(db)
     user, err = await user_svc.create_user(payload.email, payload.username, payload.password)
-    if err == "EMAIL_ALEREADY_EXISTS":
-        raise HTTPException(status_code=409, detail="Email already exists")
+    if err:
+        code = err
+        if code == "EMAIL_ALREADY_EXISTS":
+            code = "EMAIL_ALREADY_EXISTS"
+        raise HTTPException(status_code=400, detail={"code": code})
+    
+    if not user:
+        raise HTTPException(status_code=500, detail={"code": "USER_CREATION_FAILED"})
     
     sess_svc = SessionService(db)
-    session_id = await sess_svc.create_session(user["id"])
+    session_id = await sess_svc.create_session(int(user["id"]))
     set_session_cookie(response, session_id)
 
     return UserResponse(public_id=user["public_id"], email=user["email"], username=user["username"])
@@ -58,13 +65,15 @@ async def login(payload: LoginRequest, response: Response, db=Depends(get_db)):
     user = r.mappings().first()
 
     if not user or int(user["is_active"]) != 1:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail={"code": "INVALID_CREDENTIALS"})
     
     if not verify_password(payload.password, user["password"]):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail={"code": "INVALID_CREDENTIALS"})
     
     sess_svc = SessionService(db)
     session_id = await sess_svc.create_session(int(user["id"]))
+
+    csrf_token = generate_csrf_token()
 
     response.set_cookie(
         key=COOKIE_NAME,
@@ -74,11 +83,21 @@ async def login(payload: LoginRequest, response: Response, db=Depends(get_db)):
         secure=False,
         path="/",
     )
-    return {
-        "public_id": user["public_id"],
-        "email": user["email"],
-        "username": user["username"],
-    }
+
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,
+        samesite="lax",
+        secure=False,
+        path="/",
+    )
+    # return {
+    #     "public_id": user["public_id"],
+    #     "email": user["email"],
+    #     "username": user["username"],
+    # }
+    return UserResponse(public_id=user["public_id"], email=user["email"], username=user["username"])
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
@@ -93,6 +112,6 @@ async def logout(
     response.delete_cookie(COOKIE_NAME, path="/")
     return
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/initialize", response_model=UserResponse)
 async def me(current_user=Depends(get_current_user)):
-    return current_user
+    return UserResponse.model_validate(current_user)
