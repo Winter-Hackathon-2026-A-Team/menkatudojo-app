@@ -16,6 +16,18 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 COOKIE_NAME = "session_id"
 
+def set_csrf_cookie(response: Response):
+    csrf_token = generate_csrf_token()
+    secure = bool(getattr(settings, "COOKIE_SECURE", False))
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,          
+        samesite="lax",          
+        secure=secure,           
+        path="/",
+    )
+
 def set_session_cookie(response: Response, session_id: str):
     max_age = int(getattr(settings, "SESSION_EXPIRE_DAYS", 7)) * 24 * 60 * 60
     secure = bool(getattr(settings, "COOKIE_SECURE", False))
@@ -49,6 +61,16 @@ async def signup(payload: SignupRequest, response: Response, db: AsyncSession = 
     session_id = await sess_svc.create_session(int(user["id"]))
     set_session_cookie(response, session_id)
 
+    csrf_token = generate_csrf_token()
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,
+        samesite="lax",
+        secure=False,
+        path="/",
+    )
+
     return UserResponse(public_id=user["public_id"], email=user["email"], username=user["username"])
 
 @router.post("/login", response_model=UserResponse)
@@ -76,6 +98,15 @@ async def login(payload: LoginRequest, response: Response, db=Depends(get_db)):
     csrf_token = generate_csrf_token()
 
     response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,
+        samesite="lax",
+        secure=False,
+        path="/",
+    )
+
+    response.set_cookie(
         key=COOKIE_NAME,
         value=session_id,
         httponly=True,
@@ -84,14 +115,6 @@ async def login(payload: LoginRequest, response: Response, db=Depends(get_db)):
         path="/",
     )
 
-    response.set_cookie(
-        key="csrf_token",
-        value=csrf_token,
-        httponly=False,
-        samesite="lax",
-        secure=False,
-        path="/",
-    )
     # return {
     #     "public_id": user["public_id"],
     #     "email": user["email"],
@@ -110,6 +133,7 @@ async def logout(
         await sess_svc.revoke_session(session_id)
     
     response.delete_cookie(COOKIE_NAME, path="/")
+    response.delete_cookie("csrf_token", path="/")
     return
 
 @router.get("/initialize", response_model=UserResponse)
