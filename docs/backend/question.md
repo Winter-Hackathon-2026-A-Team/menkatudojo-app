@@ -96,14 +96,17 @@
 
 ## ６．API設計
 **GET/api/questions/random**
-→全体ランダム
+→ランダム出題
+**GET /api/questions**
+→質問一覧取得
 **GET/api/questions/{id}**
-→指定出題
+→指定質問取得
 **POST/api/questions**
 →質問作成（要認証）
-**GET/api/questions/category=1**
+**GET/api/questions?category=1**
 →カテゴリフィルタ
-**GET/api/questions/random/category=1**
+**GET/api/questions/random?category=1**
 →カテゴリランダム
 **POST/api/questions/random-from-selection**
 →複数選択ランダム
+
