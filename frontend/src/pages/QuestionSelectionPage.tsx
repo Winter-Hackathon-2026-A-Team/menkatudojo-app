@@ -5,7 +5,7 @@ import { QuestionList } from '@/components/features/questions/QuestionList';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMessage } from '@/contexts/MessageContext';
-import { useGroupedQuestions } from '@/hooks/useQuestions';
+import { useGroupedQuestions } from '@/hooks/useGroupedQuestions';
 import { getErrorMessage } from '@/utils/errorHandlers';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
