@@ -1,4 +1,3 @@
-// useMediaStream.ts
 import { MediaState } from '@/types/media';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -41,17 +40,16 @@ export const useMediaStream = () => {
         videoRef.current.srcObject = stream;
       }
 
-      // 取得したストリームを返却し、呼び出し元で追加処理（解析など）を可能にする
       return stream;
     } catch (err: any) {
       console.log('接続エラー:', err);
-      // 今後の課題：ここでエラーオブジェクトをセット
+      // TODO：ここでエラーオブジェクトをセット
       return null;
     }
-  }, []); // startAnalysis への依存が消えてスッキリ
+  }, []);
 
   useEffect(() => {
-    // cleanup 処理のみを担当させる
+    // cleanup 処理のみ
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
