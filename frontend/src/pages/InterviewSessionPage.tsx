@@ -37,7 +37,8 @@ export const InterviewSessionPage = () => {
   const { data: question, isLoading: isQuestionLoading, isError } = useQuestion(questionId);
   // デバッグ用
   if (isError) {
-    return console.log('質問内容取得に失敗');
+    console.log('質問内容取得に失敗');
+    return null;
   }
 
   const {
