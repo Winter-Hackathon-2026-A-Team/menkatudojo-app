@@ -11,6 +11,11 @@ import logging
 from config.settings import settings
 from database import engine, get_db
 
+from core.exception_handlers import register_exception_handlers
+
+from routers.answers import router as answers_router
+from routers.questions import router as questions_router
+
 #開発か本番かをチェックし、ログを切り分ける
 log_level = logging.DEBUG if settings.DEBUG else logging.INFO
 #サーバ側で動作記録保持
@@ -49,6 +54,9 @@ app = FastAPI(
     lifespan=lifespan,
     )
 
+app.include_router(answers_router)
+app.include_router(questions_router)
+
 #セッションミドルウェアの設定
 app.add_middleware(
     #セッション機能を有効
@@ -82,3 +90,5 @@ async def db_test(db: AsyncSession = Depends(get_db)):
         "database_version": version,
         "status": "connected"
     }
+
+register_exception_handlers(app)

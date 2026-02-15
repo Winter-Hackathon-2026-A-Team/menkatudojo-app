@@ -13,3 +13,5 @@ aiomysql
 itsdangerous
 #暗号化・復号化
 cryptography
+#　s3を操作（署名付きURL発行など）
+boto3
