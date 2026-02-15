@@ -16,6 +16,18 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 COOKIE_NAME = "session_id"
 
+def set_csrf_cookie(response: Response):
+    csrf_token = generate_csrf_token()
+    secure = bool(getattr(settings, "COOKIE_SECURE", False))
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,          
+        samesite="lax",          
+        secure=secure,           
+        path="/",
+    )
+
 def set_session_cookie(response: Response, session_id: str):
     max_age = int(getattr(settings, "SESSION_EXPIRE_DAYS", 7)) * 24 * 60 * 60
     secure = bool(getattr(settings, "COOKIE_SECURE", False))
@@ -49,6 +61,8 @@ async def signup(payload: SignupRequest, response: Response, db: AsyncSession = 
     session_id = await sess_svc.create_session(int(user["id"]))
     set_session_cookie(response, session_id)
 
+    set_csrf_cookie(response)
+ 
     return UserResponse(public_id=user["public_id"], email=user["email"], username=user["username"])
 
 @router.post("/login", response_model=UserResponse)
@@ -73,30 +87,9 @@ async def login(payload: LoginRequest, response: Response, db=Depends(get_db)):
     sess_svc = SessionService(db)
     session_id = await sess_svc.create_session(int(user["id"]))
 
-    csrf_token = generate_csrf_token()
+    set_session_cookie(response, session_id)
+    set_csrf_cookie(response)
 
-    response.set_cookie(
-        key=COOKIE_NAME,
-        value=session_id,
-        httponly=True,
-        samesite="lax",
-        secure=False,
-        path="/",
-    )
-
-    response.set_cookie(
-        key="csrf_token",
-        value=csrf_token,
-        httponly=False,
-        samesite="lax",
-        secure=False,
-        path="/",
-    )
-    # return {
-    #     "public_id": user["public_id"],
-    #     "email": user["email"],
-    #     "username": user["username"],
-    # }
     return UserResponse(public_id=user["public_id"], email=user["email"], username=user["username"])
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -110,8 +103,13 @@ async def logout(
         await sess_svc.revoke_session(session_id)
     
     response.delete_cookie(COOKIE_NAME, path="/")
+    response.delete_cookie("csrf_token", path="/")
     return
 
 @router.get("/initialize", response_model=UserResponse)
-async def me(current_user=Depends(get_current_user)):
+async def initialize(
+    response: Response,
+    current_user = Depends(get_current_user),
+):
+    set_csrf_cookie(response)
     return UserResponse.model_validate(current_user)

@@ -5,6 +5,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from routers.auth import router as auth_router
+from middlewares.csrf import CSRFMiddleware
 
 import os
 import logging
@@ -58,9 +59,14 @@ app = FastAPI(
 
 #セッションミドルウェアの設定
 app.add_middleware(
-    #セッション機能を有効
-    SessionMiddleware,
-    secret_key=settings.SECRET_KEY,
+    CSRFMiddleware,
+    cookie_name="csrf_token",
+    header_name="X-CSRF-Token",
+    exempt_paths={
+        "/docs",
+        "/openapi.json",
+    },
+    protect_prefixes=("/api",),
 )
 
 #CORS設定
