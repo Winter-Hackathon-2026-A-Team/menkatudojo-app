@@ -23,7 +23,7 @@ class Feedback(Base):
 
     avatar_id: Mapped[int] = mapped_column(
         INTEGER(unsigned=True),
-        ForeignKey("avatar.id", ondelete="RESTRICT"),
+        ForeignKey("avatars.id", ondelete="RESTRICT"),
         nullable=False
     )
     
@@ -38,11 +38,13 @@ class Feedback(Base):
     )
 
     next_tip: Mapped[str] = mapped_column(
-        VARCHAR(255)
+        VARCHAR(255),
+        nullable=True
     )
 
     model_name: Mapped[str] = mapped_column(
-        VARCHAR(100)
+        VARCHAR(100),
+        nullable=True
     )
 
     created_at: Mapped[datetime] = mapped_column(

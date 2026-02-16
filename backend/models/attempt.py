@@ -46,15 +46,17 @@ class Attempt(Base):
 
     duration_s: Mapped[int] = mapped_column(
         SMALLINT(unsigned=True),
+        nullable=True
     )
 
     error_message: Mapped[str] = mapped_column(
         VARCHAR(255),
-
+        nullable=True
     )
 
     deleted_at: Mapped[datetime] = mapped_column(
         DateTime,
+        nullable=True
     )
 
     created_at: Mapped[datetime] = mapped_column(

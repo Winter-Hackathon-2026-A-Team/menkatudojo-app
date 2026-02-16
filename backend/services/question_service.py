@@ -3,9 +3,13 @@ from sqlalchemy.orm import Session
 from models.question import Question
 from config.settings import settings
 from core.exceptions import QuestionNotFoundError, ForbiddenError
+from sqlalchemy import select
 
-def get_question_data(db, user, question_id):
-    question = db.query(Question).filter(Question.id == question_id).first()
+
+async def get_question_data(db, user, question_id):
+    stmt = select(Question).filter(Question.id == question_id)
+    result = await db.execute(stmt)
+    question = result.scalars().first()
     
     # 存在しない質問だったら
     if not question:

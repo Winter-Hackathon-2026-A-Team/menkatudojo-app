@@ -1,51 +1,26 @@
-from sqlalchemy import Column, Integer, DateTime, ForeignKey, func
-from sqlalchemy.dialects.mysql import INTEGER, CHAR
-from database import Base
+from sqlalchemy import String, DateTime, ForeignKey, Index
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.mysql import INTEGER
 
+from database import Base
 
 class Session(Base):
     __tablename__ = "sessions"
-
-    id = Column(
+    id: Mapped[int] = mapped_column(
         INTEGER(unsigned=True),
         primary_key=True,
-        autoincrement=True
+        autoincrement=True,
     )
-
-    session_id = Column(
-        CHAR(64),
-        unique=True,
-        nullable=False
-    )
-    
-    user_id = Column(
+    session_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(
         INTEGER(unsigned=True),
         ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False
-    )
-
-    created_at = Column(
-        DateTime,
-        nullable=False,
-        server_default=func.current_timestamp(),
-    )
-
-    expires_at = Column(
-        DateTime,
         nullable=False,
     )
-
-    revorked_at = Column(
-        DateTime,
-    )
-
-    last_accessed_at = Column(
-        DateTime,
-    )
-
-    updated_at = Column(
-        DateTime,
-        server_default=func.current_timestamp(),
-        onupdate=func.current_timestamp(),
-        nullable=False
+    expires_at: Mapped["DateTime"] = mapped_column(DateTime, nullable=False)
+    revoked_at: Mapped["DateTime | None"] = mapped_column(DateTime, nullable=True)
+    last_accessed_at: Mapped["DateTime | None"] = mapped_column(DateTime, nullable=True)
+    user = relationship("User", lazy="joined")
+    __table_args__ = (
+        Index("ix_sessions_user_id", "user_id"),
     )

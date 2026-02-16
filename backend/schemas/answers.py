@@ -9,6 +9,6 @@ class PreUploadRequest(BaseModel):
     characterConfig: CharacterConfig
 
 class PreUploadResponse(BaseModel):
-    recordingId: int
+    answerId: str
     uploadUrl: str
     storageKey: str 

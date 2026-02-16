@@ -13,8 +13,39 @@ from database import engine, get_db
 
 from core.exception_handlers import register_exception_handlers
 
+from routers.auth import router as auth_router
 from routers.answers import router as answers_router
 from routers.questions import router as questions_router
+from fastapi.openapi.utils import get_openapi
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=settings.APP_NAME,
+        version="1.0.0",
+        routes=app.routes,
+        description="API with CSRF header support"
+    )
+    # CSRF ヘッダーを追加
+    openapi_schema["components"]["securitySchemes"] = {
+        "CSRF": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-CSRF-Token"
+        }
+    }
+
+    # GET 以外のメソッドには CSRF を必須にする
+    for path, path_item in openapi_schema["paths"].items():
+        for method, details in path_item.items():
+            if method.lower() != "get":  # GET 以外
+                details["security"] = [{"CSRF": []}]
+            else:
+                details["security"] = []
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
 
 #開発か本番かをチェックし、ログを切り分ける
 log_level = logging.DEBUG if settings.DEBUG else logging.INFO
@@ -54,9 +85,6 @@ app = FastAPI(
     lifespan=lifespan,
     )
 
-app.include_router(answers_router)
-app.include_router(questions_router)
-
 #セッションミドルウェアの設定
 app.add_middleware(
     #セッション機能を有効
@@ -75,6 +103,16 @@ app.add_middleware(
     #HTTPヘッダーのカスタムヘッダーを許可。フロントで自由に設定できるように*としてますが、本番環境に上げる時は要相談。
     allow_headers=["*"],
 )
+
+
+#認証ルーターを登録
+app.include_router(auth_router)
+app.include_router(answers_router)
+app.include_router(questions_router)
+
+# Swagger UI設定
+app.openapi = custom_openapi
+
 
 #ヘルスチェック
 @app.get("/api/health")

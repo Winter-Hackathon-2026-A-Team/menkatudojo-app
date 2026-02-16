@@ -1,4 +1,8 @@
 from pydantic_settings import BaseSettings
+import os
+
+SESSION_EXPIRE_DAYS = int(os.getenv("SESSION_EXPIRE_DAYS", "7"))
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 
 class Settings(BaseSettings):
     APP_NAME: str = "menkatudojo-App"

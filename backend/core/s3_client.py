@@ -3,6 +3,7 @@ from config.settings import settings
 
 # router側で、
 def get_s3_client():
+    
     return boto3.client(
         "s3",
         endpoint_url=settings.S3_ENDPOINT_URL,  # MinIO

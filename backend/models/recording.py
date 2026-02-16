@@ -34,7 +34,7 @@ class Recording(Base):
 
     size_bytes: Mapped[int] = mapped_column(
         BIGINT(unsigned=True),
-
+        nullable=True
     )
 
     created_at: Mapped[datetime] = mapped_column(

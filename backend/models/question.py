@@ -16,7 +16,8 @@ class Question(Base):
 
     owner_user_id: Mapped[int] = mapped_column(
         INTEGER(unsigned=True),
-        ForeignKey("users.id", ondelete="SET NULL")
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True
     )
 
     category: Mapped[str] = mapped_column(
