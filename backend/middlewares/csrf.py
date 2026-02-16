@@ -4,14 +4,17 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
+from core.security import generate_csrf_token, verify_csrf_token  
+
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+PROTECTED_METHODS = {"POST", "PUT", "PATCH", "DELETE"}  
 
 class CSRFMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app,
         cookie_name: str = "csrf_token",
-        header_name: str = "X-CSRF-Token",
+        header_name: str = "X-XSRF-TOKEN",
         exempt_paths: set[str] | None = None,
         protect_prefixes: tuple[str, ...] = ("/api",),
     ):
@@ -32,18 +35,39 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         if path in self.exempt_paths:
             return await call_next(request)
 
-        # 安全メソッドはスキップ
-        if request.method in SAFE_METHODS:
-            return await call_next(request)
+        # まず先に次の処理へ（レスポンスを受け取る）  
+        response = await call_next(request)
 
-        # CSRF検証
+        # --- ここから「Cookieが無いなら常に発行」 ---
         cookie_token = request.cookies.get(self.cookie_name)
-        header_token = request.headers.get(self.header_name)
-
-        if not cookie_token or not header_token or cookie_token != header_token:
-            return JSONResponse(
-                status_code=403,
-                content={"code": "CSRF_INVALID"},
+        if not cookie_token:
+            token = generate_csrf_token()
+            response.set_cookie(
+                key=self.cookie_name,
+                value=token,
+                httponly=False,
+                samesite="lax",
+                secure=False,  
+                path="/",
             )
+            return response
 
-        return await call_next(request)
+        # 安全メソッドは検証しない（Cookie付与だけ）
+        if request.method in SAFE_METHODS:
+            return response
+
+        # 変更系メソッドのみCSRF検証
+        if request.method in PROTECTED_METHODS:
+            header_token = request.headers.get(self.header_name)
+
+            if not header_token:
+                return JSONResponse(status_code=403, content={"code": "CSRF_TOKEN_MISSING"})
+
+            if header_token != cookie_token:
+                return JSONResponse(status_code=403, content={"code": "CSRF_TOKEN_MISMATCH"})
+
+            # --- 「サーバで生成したものか」検証を追加 ---
+            if not verify_csrf_token(header_token):
+                return JSONResponse(status_code=403, content={"code": "CSRF_TOKEN_INVALID"})
+
+        return response
