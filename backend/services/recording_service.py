@@ -3,8 +3,7 @@ from models.attempt import Attempt
 from models.recording import Recording
 from models.avatar import Avatar
 from models.feedback import Feedback
-from datetime import datetime, timezone
-import boto3
+from datetime import datetime
 from config.settings import settings
 from zoneinfo import ZoneInfo
 
@@ -15,10 +14,10 @@ async def create_presigned_url(db, s3, user, req):
     attempt = await _create_attempt_record(db, user, req)
     # 動画レコード生成
     recording = await _create_recording_record(db, attempt)
-    # アバターレコード生成
-    avatar = await _create_avatar_record(db, req)
+    # # アバターレコード生成
+    # avatar = await _create_avatar_record(db, req)
     # フィードバックレコード生成
-    feedback = await _create_feedback_record(db, attempt, avatar, req)
+    feedback = await _create_feedback_record(db, attempt, req)
 
     try:
         presigned_url = s3.generate_presigned_url(
@@ -70,20 +69,20 @@ async def _create_recording_record(db, attempt):
 
     return recording
 
-async def _create_avatar_record(db, req):
-    avatar = Avatar(
-        personality_id=req.characterConfig.personalityId
-    )
+# async def _create_avatar_record(db, req):
+#     avatar = Avatar(
+#         personality_id=req.characterConfig.personalityId
+#     )
 
-    db.add(avatar)
-    await db.flush()
+#     db.add(avatar)
+#     await db.flush()
 
-    return avatar
+#     return avatar
 
-async def _create_feedback_record(db, attempt, avatar, req):
+async def _create_feedback_record(db, attempt, req):
     feedback = Feedback(
        attempt_id=attempt.id,
-       avatar_id=avatar.id,
+       avatar_id=req.characterConfig.avatarId,
        good_points="",
        improve_points="",
     )

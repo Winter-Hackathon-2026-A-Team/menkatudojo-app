@@ -47,6 +47,14 @@ def upgrade() -> None:
         ('志望動機', '志望動機を教えてください'),
         ('志望動機', '同業他社ではなく、弊社を志望理由を教えてください')
     """)
+
+    op.execute("""
+        INSERT INTO avatars (personality_id)
+        VALUES
+        (1),
+        (2),
+        (3)
+    """)
     # ### end Alembic commands ###
 
 
@@ -74,6 +82,11 @@ def downgrade() -> None:
     
     op.execute("""
         DELETE FROM questions
+        WHERE id IN (1, 2, 3)
+    """)
+
+    op.execute("""
+        DELETE FROM avatars
         WHERE id IN (1, 2, 3)
     """)
     # ### end Alembic commands ###
