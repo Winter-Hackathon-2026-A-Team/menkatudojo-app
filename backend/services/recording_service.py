@@ -14,8 +14,6 @@ async def create_presigned_url(db, s3, user, req):
     attempt = await _create_attempt_record(db, user, req)
     # 動画レコード生成
     recording = await _create_recording_record(db, attempt)
-    # # アバターレコード生成
-    # avatar = await _create_avatar_record(db, req)
     # フィードバックレコード生成
     feedback = await _create_feedback_record(db, attempt, req)
 
@@ -68,16 +66,6 @@ async def _create_recording_record(db, attempt):
     await db.flush()
 
     return recording
-
-# async def _create_avatar_record(db, req):
-#     avatar = Avatar(
-#         personality_id=req.characterConfig.personalityId
-#     )
-
-#     db.add(avatar)
-#     await db.flush()
-
-#     return avatar
 
 async def _create_feedback_record(db, attempt, req):
     feedback = Feedback(
