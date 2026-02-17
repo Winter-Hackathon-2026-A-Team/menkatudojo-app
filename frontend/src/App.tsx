@@ -6,7 +6,7 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { QuestionSelectionPage } from '@/pages/QuestionSelectionPage';
 import { InterviewSessionPage } from '@/pages/InterviewSessionPage';
-import { AnalysisResultPage } from './pages/AnalysisResultPage';
+import { AnalysisResultPage } from '@/pages/AnalysisResultPage';
 import { SignupPage } from '@/pages/SignupPage';
 import { TopPage } from '@/pages/TopPage';
 import { HealthCheckPage } from '@/pages/dev/HealthCheckPage';
