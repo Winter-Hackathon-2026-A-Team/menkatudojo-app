@@ -1,11 +1,12 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from routers.auth import router as auth_router
 from middlewares.csrf import CSRFMiddleware
+from fastapi.responses import JSONResponse
 
 import os
 import logging
@@ -57,11 +58,23 @@ app = FastAPI(
     lifespan=lifespan,
     )
 
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    # detailが辞書かつ'code'キーを持つ場合、フラットな構造で返す
+    if isinstance(exc.detail, dict) and "code" in exc.detail:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=exc.detail,  # {"code": "..."} が直接返る
+        )
+    # それ以外の標準的なHTTPExceptionはそのまま
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
 #セッションミドルウェアの設定
 app.add_middleware(
     CSRFMiddleware,
-    cookie_name="csrf_token",
-    header_name="X-CSRF-Token",
     exempt_paths={
         "/docs",
         "/openapi.json",
@@ -78,7 +91,7 @@ app.add_middleware(
     #GET,POST等のHTTPメソッド許可
     allow_methods=["*"],
     #HTTPヘッダーのカスタムヘッダーを許可。フロントで自由に設定できるように*としてますが、本番環境に上げる時は要相談。
-    allow_headers=["*"],
+    allow_headers=["*", "x-xsrf-token"],
 )
 
 #認証ルーターを登録
