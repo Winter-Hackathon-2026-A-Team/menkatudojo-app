@@ -8,178 +8,203 @@
 - カメラ・マイクの再起動
 - 録画開始・停止やタイマーの同期
 - S3へのアップロード+プレビュー表示
-- backendへのフィードバック依頼
 - backendへの進捗確認・分析結果の取得・画面遷移
+
+- 処理フロー
+  - 録画画面遷移時、GETリクエストを送り、質問内容と録画可能時間を取得
+  - 録画開始
+  - 録画終了後、フィードバックを受ける選択をする
+  - questionId,peronalityIdをbackendに送り、S3の署名付きURLとpublic_idを含めたパスを取得
+  - S3へPUTリクエスト
+  - (アップロード完了後、Lambdaで音声データを抽出、backendへ完了依頼→分析スタート)
+  - S3へのアップロード完了後、backendへ完了確認のボーリングを開始
+  - 分析結果がレスポンスされたら、分析結果画面へ遷移し結果を表示
 
 ### b. 状態管理
 
-- [globalState] analysisResult: feedbackオブジェクト ...解析完了後に取得するデータ
-- [globalState] globalMessage: string | null, error | success | info | null...全体表示用のメッセージ
-- [LocalState] appStatus:
-  - preparing（初期値）...質問取得中・カメラ起動中
-  - ready ...準備完了。録画開始ボタンが押せる状態
-  - counting ...開始を押してから、実際に録画が始まるまでのカウントダウン3秒
-  - recording ...録画中。タイマーが同期
-  - uploading ...録画終了後、プレビュー表示orS3へアップロード
-  - analyzing ...backendへの分析依頼＋進捗確認（ボーリング）
-- [LocalState] videoStatus: checking（初期値） | ready | error ...video起動状態の管理
-- [LocalState] audioStatus: checking（初期値） | ready | error ...マイク起動状態の管理
-- [LocalState] countDown: number ...録画ボタン押下→録画開始までのカウントダウン3秒
-- [LocalState] remainingTime: number ...録画の残り秒数(カウントダウン)
-- [LocalState] mediaRecorder: MediaRecorder | null ...録画の実体
-- [LocalState] chunks: Blob[] ...録画データの断片
-- [LocalState] uploadProgress: number ...S3へのアップロード進捗率
-- [localState] selectedQuestion: {"questionContent": "", "durationLimitSecond": integer} ...質問内容、録画時間
-- [localState] videoURL: string | null ...録画直後のプレビュー用URL
-- [localState] selectedPersonalityId: integer（初期値: 1）...選択されているアバター（localstrageから取得）
-- [localState] answerId: string | null（初期値）...backendから取得するanswerId(attemptsのpublic_id)
-- [localState] strageKey: string | null（初期値）...S3のフォルダの場所の特定用
-- [LocalState] isModalOpen: boolean(初期値false) ...練習強制終了モーダルが出ているか
-- [LocalState] errorMessage: string | null ...エラー表示
-- [LocalState] infoMessage: string | null ...userへの案内表示
-- [LocalState] errorLevel:
-  - retry ...データを保持したまま次のアクションを用意（S3アップロード失敗など）
-  - reset ...録画中のカメラ切断など。最初からやり直すアクションを用意
-  - exit ...500エラー系。ホームに遷移など
-  - null ...正常時（初期値）
+#### グローバル状態
 
-====　preparing（質問取得・カメラ起動準備）　====
+- globalMessage: { type: 'error'|'success'|'info', message: string } | null
+  - 全画面のメッセージ表示を管理
 
-### c-1. 関数
+- analysisResult: feedbackオブジェクト
+  - 解析完了後に取得するデータ
 
-- 関数名: loadPersonalityId
-- 役割: localStrageからpersonalityIdを取得
-- 引数: なし
-- 返り値:
+#### ローカル状態
 
-### d-1. ロジック
+- recordingState:
+  | phase: 'initializing'（初期値）...質問取得中・カメラ起動中
+  | phase: 'ready'; ...準備完了。録画開始ボタンが押せる状態。question, mediaState を保持。
+  | phase: 'countdown'; ...開始前の5秒間。countを保持。
+  | phase: 'recording'; ...録画中。elapsed（経過時間）を保持。
+  | phase: 'completed'; ...録画終了。videoBlob, videoURL を保持（プレビュー可能状態）。
+  | phase: 'uploading'; ...署名付きURL取得〜S3アップロード中。progress, answerId, storageKey を保持。
+  | phase: 'analyzing'; ...バックエンドでのAI分析待ち（ポーリング中）。pollCount, answerId を保持。
+  | phase: 'error'; error: ...異常発生。RecordingError オブジェクトを保持。
 
-- localStrageからpersonalityIdを取得
-- 成功: selectedPersonalityIdにセット
-- 失敗: personalityIdが存在しない場合は1をセット
+- recordingError:
+  | code: string ...backendからのレスポンス
+  | message: string ...userに出力するメッセージ
+  | phase: recordingStateのphase ...どのphaseでエラーが起きたか
+  | severity: 'recoverable'/ 'fatal' ...ユーザーが対応可能なエラーか、サーバー由来か
 
-### c-2. 関数
+  // デバイスエラーの場合
+  mediaError?: MediaErrorInfo;
 
-- 関数名：fetchQuestion(useEffect)
+  | recovery?: { label: string; action: () => Promise<void> }
+  | details?: デバッグ用の詳細内容
+
+- mediaRecorder: MediaRecorder | null
+  - 録画の実体
+
+- chunks: Blob[]
+  - 録画データの断片
+
+- selectedQuestion: {"questionContent": "", "durationLimitSecond": number}
+  - 質問内容、録画時間
+
+- videoURL: string | null
+  - 録画直後のプレビュー用URL
+
+- selectedAvatarId: localStorage（キー: selectedAvatarId）から取得したアバターID
+
+- characterConfig: PERSONALITIES 定数から特定した { avatarId, personalityId }
+
+- answerId: string | null（初期値）
+  - backendから取得するanswerId(attemptsのpublic_id)
+
+- strageKey: string | null（初期値）
+  - S3のフォルダの場所の特定用
+
+- isModalOpen: boolean(初期値false)
+  - 練習強制終了モーダルが出ているか
+
+====　initializing（質問取得・カメラ起動準備）　====
+
+### c. 関数・処理
+
+#### loadPersonalityId()
+
+- 役割: localStrageからselectedAvatarId を取得。PERSONALITIES 定数と照合し、characterConfig を確定させる。未設定時は ID: 1 を採用。
+
+
+#### fetchQuestion()
+
 - 役割：選択した質問内容と録画時間を取得
-- エンドポイント: /api/questions/id
+- エンドポイント: /api/questions/questionId
 - メソッド：GET
-- 引数：id(integer)
+- 引数：questionId(number)
 - 返り値：
   - 成功
-    {　”questionId”: integer,
-    ”questionContent”: “string”,
-    ”durationLimitSeconds”: samllint
+    {
+    "questionId": 12,
+    "categoryName": "自己PR",
+    "questionContent": "自己PRをしてください。",
+    "source": "system",
+    "sortOrder": 1,
+    "durationLimitSeconds": 90
     }
+
   - 失敗
     { "code": "ERROR_CODE_STRING"}
 
-### d-2. ロジック
+- 処理
+  - /api/questions/questionId にGETリクエストを送る
+  - 成功：
+    - selectedQuestionにレスポンスデータを保存
+  - 失敗：
+    - 通信エラー:
+      - 非同期処理が開始できない | レスポンスが得られない | サーバーエラー
+      - recordingState: errorにセット, recordingErrorをセットして対応（severity: fatal）
+      - モーダルを展開、エラーメッセージとホームに戻るボタンを配置して処理を終了
+    - URLの質問IDが不正:
+      - recordingState: errorにセット, recordingErrorをセットして対応（severity: recoverable）
+      - モーダルを展開、エラーメッセージとリトライ？
 
-- 初期化：
-  - errorMessageをクリア, errorLevelをnullにセット
-- /api/questions/id にGETリクエストを送る
-- 成功：
-  - selectedQuestionにレスポンスデータを保存
-- 失敗：
-  - 通信エラー:
-    - 非同期処理が開始できない | レスポンスが得られない | サーバーエラー
-    - status: errorLevelをresetに。
-    - errorMessageに再試行の案内を入れ、ボタン（fetchQuestion）を配置し処理を終了
-  - URLの質問IDが不正:
-    - errorLevelをexitにセット、ホームに戻るボタンを押して処理を終了
+#### initializeScreen
 
-### c-3. 関数
-
-- 関数名: initializeScreen（useEffect）
 - 役割: 録画開始に必要なデータとデバイスの準備を整え、利用開始状態にする
 
-### d-3. ロジック
+- 処理
+  - 初期化：
+    - 録画開始ボタンをdisabled
+  - loadPersonalityIdを実行
+  - fetchQuestionを実行
+  - setupDevicesを実行（権限チェック画面で定義）
+  - 成功：
+    - recordingState: readyにセット, totalに録画時間を保存 === 録画開始ボタンをenabled
+  - 失敗：
+    - setupDevicesが失敗
+      - recordingState: error, recordingErrorのseverty: recoverableにセットし対応
 
-- 初期化：
-  - appStatus: preparingにセット
-  - errorMessage, infoMessageをクリア, errorLevelをnullにセット
-  - 録画開始ボタンをdisabled
-- loadPersonalityIdを実行
-- fetchQuestionを実行
-- setupDevicesを実行（権限チェック画面で定義）
-- 成功：
-  - remainingTimeに録画時間を保存
-  - appStatusをreadyにセット, 録画開始ボタンをenabled
-- 失敗：
-  - setupDevicesが失敗
-    - videoStatus/audioStatusいずれかがerror
-    - errorLevelをresetにセット、デバイス再起動ボタン（setupDevices）を配置
+====　ready/countdown/recording　====
 
-====　ready（準備完了）　====
+#### startMediaRecorder
 
-### c-4. 関数
-
-- 関数名: startMediaRecorder
 - 役割: mediaRecorderの録画を開始し、データの断片（chunks）を保持する準備
 
-### d-4. ロジック
+- 処理
+  - streamが確認できない場合
+    - モーダルを展開、メッセージ＋再試行（setupDevices）を配置
+  - mediaRecorderを実行
+  - データの断片が届くたびに、chunksを保存
 
-- streamが確認できない場合
-  - 処理を終了、errorMessageに出力
-- mediaRecorderを実行
-- データの断片が届くたびに、chunksを保存
+#### startRecordingTimer
 
-### c-5. 関数
+- 役割: 1秒ごとにelapsedを更新。0になったら停止
 
-- 関数名: startRecordingTimer
-- 役割: 1秒ごとにremainingTimeを更新。0になったら停止
+- 処理
+  - setIntervalを使う（IDをtimerRefに保存らしい）
+  - 1秒ごとにelapsedを更新
+  - 0になったら:
+    - タイマーを破棄
+    - stopRecordingを実行（後述する関数）
+  - 録画停止ボタンが押され、stopRecordingが実行されたら:
+    - タイマーを破棄
+  - その他の理由（戻るボタンを押すなど）:
+    - タイマーを破棄
 
-### d-5. ロジック
+#### startRecordingProcess
 
-- setIntervalを使う（IDをtimerRefに保存らしい）
-- 1秒ごとにremainingTimeを更新
-- 0になったら:
-  - タイマーを破棄
-  - stopRecordingを実行（後述する関数）
-- 録画停止ボタンが押され、stopRecordingが実行されたら:
-  - タイマーを破棄
-- その他の理由（戻るボタンを押すなど）:
-  - タイマーを破棄
-
-### c-6. 関数
-
-関数名: startRecordingProcess
 役割: 録画開始ボタンを押下時、カウントダウンを表示, 終了後に録画開始
 
-### d-6. ロジック
+- 処理
+  - 録画ボタン押下をトリガーに、recordingState: countdownにセット
+  - 画面中央にオーバーレイを設置、カウントダウンを表示
+  - countが0:
+    - startMediaRecorderを実行
+      - 成功:
+        - recordingStateをrecordingにセット
+        - startRecordingTimerを実行
 
-- 録画ボタン押下をトリガーに、appStatusをcountingにセット
-- 画面中央（infoMessageスペース？）に3,2,1とカウントダウン
-- countが0:
-  - startMediaRecorderを実行
-    - 成功:
-      - appStatusをrecordingにセット
-      - startRecordingTimerを実行
+#### stopRecording
 
-### c-7. 関数
-
-- 関数名:stopRecording
 - 役割: 録画の停止、タイマーの解除
 
-### d-7. ロジック
-
-- タイマーが0、もしくは手動で停止ボタン押下がトリガー
-- remainingTimeを破棄（setInterval）
-- mediaRecorderをstop
-- appStatusをuploadingにセット
-- 動画ファイルを生成（chunksを繋ぎ合わせる）。video/webmという形式, videoBlobとして保存
-- videoプレビュー用URLを発行、videoURLに保存
+- 処理
+  - タイマーが0、もしくは手動で停止ボタン押下がトリガー
+  - elapsedを破棄（setInterval）
+  - mediaRecorderをstop
+  - recordingStateをuploadingにセット
+  - 動画ファイルを生成（chunksを繋ぎ合わせる）。video/webmという形式, videoBlobとして保存
+  - videoプレビュー用URLを発行、videoURLに保存
 
 ====　uploading（S3へのアップロード）　====
 
-### c-8. 関数
+#### getPresignedUrl
 
-- 関数名: getPresignedUrl
 - 役割: backendからS3の署名付きURLを取得する
 - エンドポイント: /api/answers/pre-upload
 - メソッド: POST
-- 引数: { "questionId": integer, "personalityId": integer }
+- 引数:
+  {
+  "questionId": number,
+  "characterConfig": {
+  "avatarId": 1,
+  "personalityId": 1
+  }
+  }
+
 - 返り値:
   - 成功:
     {”answerId”: “string”,
@@ -188,68 +213,40 @@
   - 失敗:
     { "code": "ERROR_CODE_STRING"}
 
-### d-8. ロジック
+- 処理
+  - 初期化:
+    - フィードバックを受けるボタンをdisabledにセット
+  - /api/answers/pre-uploadにPOSTリクエスト
+  - 成功:
+    - strageKeyにレスポンスデータを保存
+    - uploadToS3を実行
+    - オーバーレイを設置し、"動画を送信中..."のようなメッセージを出力
 
-- 初期化:
-  - フィードバックを受け取るボタンをdisabledにセット
-  - errorMessage, errorLevelをクリア
-- /api/answers/pre-uploadにPOSTリクエスト
-- 成功:
-  - answerId, strageKeyにレスポンスデータを保存
-  - uploadToS3を実行
-  - infoMessageに"動画を送信中..."のようなメッセージを出力
+#### uploadToS3
 
-### c-9. 関数
-
-- 関数名: uploadToS3
 - 役割: S3へ直接動画データをアップロード
 - エンドポイント: 署名付きURL
 - メソッド: PUT
 - 引数: uploadUrl, blob
 - 返り値: status: 200
 
-### d-9. ロジック
-
-- errorMessage, errorLevelをクリア
-- S3のURLにPUTリクエスト
-- 成功:
-  - status: 200を受け取る
-  - appStatusをanalyzingにセット
-  - requestAnalysisを実行
-  - infoMessageに"動画を分析中..."のようなメッセージを出力
-- 失敗:
-
-====　analyzing（backendへの分析依頼）　====
-
-### c-10. 関数
-
-- 関数名: requestAnalysis
-- 役割: backendへアップロード完了の通知＋分析依頼
-- エンドポイント: /api/answers/complete
-- メソッド: POST
-- 引数:
-  {”answerId”: “string”,
-  ”storageKey”: “string”,
-  ”personalityId”: “number”}
-- 返り値:
+- 処理
+  - errorLevelをクリア
+  - S3のURLにPUTリクエスト
   - 成功:
-    {”answerId”: “string”,
-    ”analysisStatus”: processing”}
+    - status: 200を受け取る
+    - recordingStateをanalyzingにセット
+    - checkAnalysisStatusを実行
+    - オーバーレイに"動画を分析中..."のようなメッセージを出力
   - 失敗:
-    { "code": "ERROR_CODE_STRING"}
+    - getPresignedUrlを実行（3回）、新しい署名つきURLを取得し、uploadToS3を実行
+    - 3回やっても失敗: モーダル展開、エラー内容表示
+    - handleAbortを実行し削除依頼
 
-### d-10. ロジック
+====　analyzing（backendへの分析結果確認）　====
 
-- errorMessage, errorLevelをクリア
-- /api/answers/completeにPOSTリクエスト
-- 成功:
-  - checkAnalysisStatusを実行
-  - infoMessageに"AIが解析中...."みたいな、フェーズ変わった的なアナウンスを流す
-- 失敗:
+#### checkAnalysisStatus
 
-### c-11. 関数
-
-- 関数名: checkAnalysisStatus
 - 役割: 解析が完了したかどうかを定期的に確認
 - エンドポイント: /api/answers/${answerId}
 - メソッド: GET
@@ -265,9 +262,9 @@
   完了：
   {”answerId”: “string”,
   ”analysisStatus”: “completed”,
-  ”personalityId”: integer,
+  ”personalityId”: number,
   ”feedback”: {
-  ”score”: ?,
+  ”score”: "string",
   ”goodPoints”: “string”,
   ”improvePoints”: “string”,
   ”nextTip”: “string”,
@@ -276,49 +273,58 @@
   }
 
 - 失敗:
+  {
+  "answerId": "string",
+  "analysisStatus": "failed",
+  "personalityId": ,
+  "feedback": null,
+  ”code”: “string”
+  }
 
-### d-11. ロジック
-
-- analysisStatusがprocessing
-  - setIntervalで再起的に実行
-  - infoMessageに"AIが詳細を分析中..."みたいにする
-- analysisStatusがcomplete
-  - setIntervalを停止
-  - analysisResultに保存
-  - 分析結果画面へ遷移
-- 失敗:
-  - エラー（status: error / timeout
-  - ポーリング停止。
-  - errorLevel: retry にセットし、再試行ボタンを表示。
-
-
+- 処理
+  - analysisStatusがprocessing
+    - setIntervalで再起的に実行
+    - オーバーレイに"AIが詳細を分析中..."みたいにする
+  - analysisStatusがcomplete
+    - setIntervalを停止
+    - analysisResultに保存
+    - 分析結果画面へ遷移
+  - 失敗:
+    - エラー（status: error（failedが返る場合） / timeout（一定回数のボーリングに達した場合）
+    - ポーリング停止。
+    - recordingState: error, recordingErrorのseverity: によって対応
+  - アンマウントされた時もsetIntervalを停止
+  - handleAbortが実行されたときもsetIntervalを停止
 
 ====　その他　====
 
-### c-12. 関数
-- 関数名: handleAbort
+#### videoURLの破棄
+
+- アンマウントされる時、videoURLを破棄する
+
+#### handleAbort
+
 - 役割: 閉じるボタンを押した際の全フェーズ共通処理
 - エンドポイント: /api/answers/${answerId}
 - メソッド: DELETE
 - 引数: answerId
 - 返り値: { "answerId": "string", "message": "success" }
 
-### d-12. ロジック
-- 初期化：
-    - errorMessage: nullにセットし前のエラーをクリア
+- 処理
+  - 初期化：
     - 終了するボタンをdisabled
     - MediaRecorderを止める
     - streamを停止
     - タイマーを停止
     - メモリ上の動画データを破棄
-- answerIdが存在しない場合は処理を終了しダッシュボードへ遷移
-- /api/answers/${answerId}にDELETEリクエストを送る
-- 成功：
+    - videoURLを破棄
+  - answerIdが存在しない場合は処理を終了しダッシュボードへ遷移
+  - /api/answers/${answerId}にDELETEリクエストを送る
+  - 成功：
     - IsModalOpen: falseにセット、モーダルを閉じる
     - dashbord画面へ遷移
-- 失敗：
-  - 通信エラー:
-    - 非同期処理が開始できない | レスポンスが得られない | サーバーエラー
-    - errorMessageにメッセージを流す
-    - isSubmitting: falseにセット、ボタンを押せるようにする
-
+  - 失敗：
+    - 通信エラー:
+      - 非同期処理が開始できない | レスポンスが得られない | サーバーエラー
+      - できなかった旨のメッセージを流す
+      - isSubmitting: falseにセット、ボタンを押せるようにする、もしくはDashboardに遷移するボタン

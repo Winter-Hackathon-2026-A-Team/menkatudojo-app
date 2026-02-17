@@ -30,7 +30,7 @@
 - audioLevel: number(0-100), 初期値: 0
   - マイク音量の視覚化用
 
-- selectedPersonalityId: number（初期値: localStorageから取得、なければ1）
+- selectedAvatarId: number（初期値: localStorageから取得、なければ1）
   - 選択されているアバターID
 
 - MediaErrorType: object | null（正常時）
@@ -49,19 +49,19 @@
 
 ### c. 関数
 
-#### handlePersonalitySelect(personalityId)
+#### handleAvatarSelect(avatarId)
 
 - 役割：選択されたアバターIDをlocalstorageに保存
 - 処理:
-  - selectedPersonalityIdを更新
-  - localStorageにpersonalityIdを保存
+  - selectedAvatarIdを更新
+  - localStorageにavatarIdを保存
 
 - 処理フロー:
   - 初期化：
-    - localstorageからpersonalityIdを取得
-    - 取得できた場合はその値、nullの場合は1をselectedPersonalityIdにセット
+    - localstorageからavatarIdを取得
+    - 取得できた場合はその値、nullの場合は1をselectedAvatarIdにセット
   - 選択:
-    - ユーザーがアバターを選択→handlePersonalitySelectを実行（localstorageに保存）
+    - ユーザーがアバターを選択→handleAvatarSelectを実行（localstorageに保存）
 
 #### setupDevices()
 
@@ -76,7 +76,6 @@
   - 両方成功:
     - 両方を内包するstreamを作成
     - videoStatus, audioStatusをreadyにセット
-    - 音量監視処理を開始（startAudioMonitaring）
     - globalMessageに準備完了アナウンスを流す
   - 失敗（両方・片方）:
     - 失敗したデバイスのStatusをerrorにセット
@@ -97,17 +96,16 @@
 
 - 処理フロー:
   - streamがあれば全トラック停止
-  - 音量監視を停止(stopAnalysis)
 
 #### startAnalysis(stream)
 
 - 役割: マイク音量のリアルタイム監視
-- setupDevicesの中で呼び出す
 
 - 処理フロー:
   - Web Audio APIを使用
   - audioLevelを0-100の範囲で更新
   - requestAnimationFrameでループ
+  - アンマウント時は処理を終了
 
 #### handleRetry()
 
@@ -127,12 +125,11 @@
   - 上記以外は練習開始ボタンをdisabled
   - ボタン押下で次画面へ遷移（質問IDをURLパラメータに保持したまま）＋streamをtrack.stop()
 
-
 ### d. ライフサイクル
 
 #### マウント時
 
-- localStorageからpersonalityId読み込み
+- localStorageからavatarId読み込み
 - setupDevices()実行
 
 #### アンマウント時
