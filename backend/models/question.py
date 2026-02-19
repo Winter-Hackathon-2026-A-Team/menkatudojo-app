@@ -1,6 +1,6 @@
-from sqlalchemy import VARCHAR, Integer, DateTime, ForeignKey, Text, text, func
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.dialects.mysql import INTEGER, CHAR, SMALLINT, TINYINT
+from sqlalchemy import VARCHAR, DateTime, ForeignKey, Text, text, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.mysql import INTEGER, TINYINT
 from datetime import datetime
 from database import Base
 
@@ -14,15 +14,17 @@ class Question(Base):
         autoincrement=True
     )
 
-    owner_user_id: Mapped[int] = mapped_column(
+    owner_user_id: Mapped[int | None] = mapped_column(
         INTEGER(unsigned=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True
     )
 
-    category: Mapped[str] = mapped_column(
-        VARCHAR(20),
-        nullable=False
+    category_id: Mapped[int] = mapped_column(
+        INTEGER(unsigned=True),
+        ForeignKey("categories.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True
     )
 
     visibility: Mapped[str] = mapped_column(
@@ -37,7 +39,7 @@ class Question(Base):
         server_default=text("'system'")
     )
 
-    question: Mapped[str] = mapped_column(
+    question_text: Mapped[str] = mapped_column(
         Text,
         nullable=False
     )
@@ -47,7 +49,7 @@ class Question(Base):
         nullable=False,
         server_default=text("1")
     )
-    
+
     sort_order: Mapped[int] = mapped_column(
         INTEGER,
         nullable=False,
@@ -63,5 +65,8 @@ class Question(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        server_default=func.current_timestamp()
+        server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp()
     )
+
+    category = relationship("Category", back_populates="questions")
