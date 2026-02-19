@@ -4,15 +4,48 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from routers.auth import router as auth_router
-from middlewares.csrf import CSRFMiddleware
 
 import os
 import logging
-import models
 
 from config.settings import settings
-from database import engine, get_db, Base
+from database import engine, get_db
+
+from core.exception_handlers import register_exception_handlers
+
+from routers.auth import router as auth_router
+from routers.answers import router as answers_router
+from routers.questions import router as questions_router
+from fastapi.openapi.utils import get_openapi
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=settings.APP_NAME,
+        version="1.0.0",
+        routes=app.routes,
+        description="API with CSRF header support"
+    )
+    # CSRF ヘッダーを追加
+    openapi_schema["components"]["securitySchemes"] = {
+        "CSRF": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-CSRF-Token"
+        }
+    }
+
+    # GET 以外のメソッドには CSRF を必須にする
+    for path, path_item in openapi_schema["paths"].items():
+        for method, details in path_item.items():
+            if method.lower() != "get":  # GET 以外
+                details["security"] = [{"CSRF": []}]
+            else:
+                details["security"] = []
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
 
 #開発か本番かをチェックし、ログを切り分ける
 log_level = logging.DEBUG if settings.DEBUG else logging.INFO
@@ -32,11 +65,6 @@ async def lifespan(app: FastAPI):
         async with engine.begin() as conn:
             #ヘルスチェック(SELECT 1)で疎通確認
             await conn.execute(text("SELECT 1"))
-
-            # 開発環境(dev)の場合、モデルのテーブルを自動作成
-            if os.getenv("APP_ENV", "dev") == "dev":
-                await conn.run_sync(models.Base.metadata.create_all)
-
         logger.info("Database connection successful.")
     except Exception as e:
         logger.error(f"Database connection failed: {e}")
@@ -59,14 +87,9 @@ app = FastAPI(
 
 #セッションミドルウェアの設定
 app.add_middleware(
-    CSRFMiddleware,
-    cookie_name="csrf_token",
-    header_name="X-CSRF-Token",
-    exempt_paths={
-        "/docs",
-        "/openapi.json",
-    },
-    protect_prefixes=("/api",),
+    #セッション機能を有効
+    SessionMiddleware,
+    secret_key=settings.SECRET_KEY,
 )
 
 #CORS設定
@@ -81,8 +104,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 #認証ルーターを登録
 app.include_router(auth_router)
+app.include_router(answers_router)
+app.include_router(questions_router)
+
+# Swagger UI設定
+app.openapi = custom_openapi
+
 
 #ヘルスチェック
 @app.get("/api/health")
@@ -98,3 +128,5 @@ async def db_test(db: AsyncSession = Depends(get_db)):
         "database_version": version,
         "status": "connected"
     }
+
+register_exception_handlers(app)

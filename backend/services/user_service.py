@@ -1,6 +1,10 @@
 from __future__ import annotations
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+from models.user import User
+from core.exceptions import UserNotFoundError
 from uuid import uuid4
-from sqlalchemy import text
+from sqlalchemy import text, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.security import hash_password
@@ -59,4 +63,12 @@ class UserService:
         return user, None
 
         
-    
+async def get_user(db: AsyncSession, user_id: int):
+    stmt = select(User).filter(User.id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
+
+    if not user:
+        raise UserNotFoundError()
+    return user
+
