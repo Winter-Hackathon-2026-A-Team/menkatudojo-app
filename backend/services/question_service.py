@@ -47,3 +47,38 @@ async def get_random_question_id(db, user):
         raise QuestionNotFoundError()
 
     return qid
+
+async def get_random_question_id_by_category(db, user, category_id):
+    stmt = (
+        select(Question.id)
+        .where(Question.is_active == 1)
+        .where(Question.category_id == category_id)
+        .where((Question.source != "user") | (Question.owner_user_id == user.id))
+        .order_by(func.rand())
+        .limit(1)
+    )
+    result = await db.execute(stmt)
+    qid = result.scalar_one_or_none()
+
+    if not qid:
+        raise QuestionNotFoundError()
+
+    return qid
+
+async def create_question(db, user, payload):
+    question = Question(
+        owner_user_id=user.id,
+        category_id=payload.category_id,
+        visibility=payload.visibility,
+        source="user",
+        question_text=payload.question_text,
+        is_active=1,
+        sort_order=0
+    )
+
+    db.add(question)
+    await db.commit()
+    await db.refresh(question)
+
+    return question
+

@@ -29,3 +29,4 @@ class QuestionResponse(BaseModel):
 
 class RandomFromSelectionRequest(BaseModel):
     question_ids: list[int] = Field(min_length=1)
+
