@@ -39,7 +39,7 @@ export const QuestionSelectionPage = () => {
 
   // 関数：質問を選択する
   const handleSelect = (id: number) => {
-setQuestionId((prev) => (prev === id ? null : id));
+    setQuestionId((prev) => (prev === id ? null : id));
   };
 
   const navigate = useNavigate();
