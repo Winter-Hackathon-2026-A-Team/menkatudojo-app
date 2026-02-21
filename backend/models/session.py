@@ -11,15 +11,28 @@ class Session(Base):
         primary_key=True,
         autoincrement=True,
     )
-    session_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    session_id: Mapped[str] = mapped_column(
+        String(64), 
+        unique=True, 
+        nullable=False
+    )
     user_id: Mapped[int] = mapped_column(
         INTEGER(unsigned=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
-    expires_at: Mapped["DateTime"] = mapped_column(DateTime, nullable=False)
-    revoked_at: Mapped["DateTime | None"] = mapped_column(DateTime, nullable=True)
-    last_accessed_at: Mapped["DateTime | None"] = mapped_column(DateTime, nullable=True)
+    expires_at: Mapped["DateTime"] = mapped_column(
+        DateTime, 
+        nullable=False
+    )
+    revoked_at: Mapped["DateTime | None"] = mapped_column(
+        DateTime, 
+        nullable=True
+    )
+    last_accessed_at: Mapped["DateTime | None"] = mapped_column(
+        DateTime, 
+        nullable=True
+    )
     user = relationship("User", lazy="joined")
     __table_args__ = (
         Index("ix_sessions_user_id", "user_id"),

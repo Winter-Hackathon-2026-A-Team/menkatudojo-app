@@ -2,7 +2,9 @@
 import { PersonalitySelector } from '@/components/features/authority-check/PersonalitySelector';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PERSONALITIES } from '@/constants/personalities'; // 定数をインポート
 import { useMessage } from '@/contexts/MessageContext';
+import { useAudioAnalyser } from '@/hooks/useAudioAnalyser';
 import { useMediaStream } from '@/hooks/useMediaStream';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MicIcon from '@mui/icons-material/Mic';
@@ -15,7 +17,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 export const AuthorityCheckPage = () => {
   const navigate = useNavigate();
   const { questionId } = useParams(); // URLからquestionIdを取得
-  const { videoRef, mediaState } = useMediaStream();
+  const { videoRef, setupDevices, mediaState } = useMediaStream();
+  const { audioLevel, startAnalysis, stopAnalysis } = useAudioAnalyser();
   const { showMessage } = useMessage(); // globalMessageの関数を取得
   const hasNotifiedRef = useRef(false); // メッセージ出力が多重発火しないようにフラグを作る
 
@@ -27,16 +30,39 @@ export const AuthorityCheckPage = () => {
     navigate(`/interview/session/${questionId}`);
   };
 
-  // アバターの選択（LocalStorageに保存）
-  const [selectedPersonalityId, setSelectedPersonalityId] = useState<number>(() => {
-    const saved = localStorage.getItem('selectedPersonalityId');
-    return saved ? Number(saved) : 1;
+  // 1. 保存されているavatarIdを取得。なければ定数の先頭を採用
+  const [selectedAvatarId, setSelectedAvatarId] = useState<number>(() => {
+    const saved = localStorage.getItem('selectedAvatarId');
+    // Numberで変換し、失敗(NaN)したら初期値を採用
+    const numId = saved ? Number(saved) : NaN;
+    return !isNaN(numId) ? numId : PERSONALITIES[0].avatarId;
   });
 
-  const handlePersonalitySelect = (id: number) => {
-    setSelectedPersonalityId(id);
-    localStorage.setItem('selectedPersonalityId', String(id));
+  // 2. 現在選択されている師範のオブジェクトを特定（UIでの表示用）
+  const selectedPersonality =
+    PERSONALITIES.find((p) => p.avatarId === selectedAvatarId) || PERSONALITIES[0];
+
+  // 3. アバター選択時のハンドラー
+  const handleAvatarSelect = (id: number) => {
+    setSelectedAvatarId(id); // 状態（number）を更新
+    localStorage.setItem('selectedAvatarId', String(id)); // ストレージ（string）に保存
   };
+
+  useEffect(() => {
+    const init = async () => {
+      // 1. ストリームを取得
+      const stream = await setupDevices();
+      // 2. 取得できたら解析を開始
+      if (stream) {
+        startAnalysis(stream);
+      }
+    };
+    init();
+
+    return () => {
+      stopAnalysis(); // 画面を離れる時に解析を止める
+    };
+  }, [setupDevices, startAnalysis, stopAnalysis]);
 
   // デバイス準備完了時にglobalMessageに出力
   useEffect(() => {
@@ -126,14 +152,14 @@ export const AuthorityCheckPage = () => {
               <Stack direction="row" spacing={2} alignItems="center" sx={{ px: 1 }}>
                 {/* 音量がある時だけアイコンに色がつく */}
                 <MicIcon
-                  color={mediaState.audioLevel > 5 ? 'primary' : 'disabled'}
+                  color={audioLevel > 5 ? 'primary' : 'disabled'}
                   sx={{ transition: 'color 0.2s' }}
                 />
 
                 <Box sx={{ flexGrow: 1 }}>
                   <LinearProgress
                     variant="determinate" // 数値を直接指定できる
-                    value={mediaState.audioLevel}
+                    value={audioLevel}
                     sx={{
                       height: 10,
                       borderRadius: 5,
@@ -141,7 +167,7 @@ export const AuthorityCheckPage = () => {
                       '& .MuiLinearProgress-bar': {
                         borderRadius: 5,
                         // 80%を超えたら警告色（赤）にするリスク管理
-                        bgcolor: mediaState.audioLevel > 80 ? 'error.main' : 'primary.main',
+                        bgcolor: audioLevel > 80 ? 'error.main' : 'primary.main',
                         transition: 'transform 0.1s linear', // 動きを滑らかに
                       },
                     }}
@@ -162,8 +188,9 @@ export const AuthorityCheckPage = () => {
                 フィードバックをもらう師範を選択してください。
               </Typography>
               <PersonalitySelector
-                selectedPersonalityId={selectedPersonalityId}
-                onSelect={handlePersonalitySelect}
+                personalities={PERSONALITIES}
+                selectedAvatarId={selectedAvatarId} // 現在選択中のIDを渡す
+                onSelect={handleAvatarSelect} // IDを更新する関数を渡す
               />
             </Stack>
           </Box>

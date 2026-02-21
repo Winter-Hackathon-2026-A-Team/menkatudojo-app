@@ -1,7 +1,11 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+from models.session import Session
+from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import text
+from sqlalchemy import text, select
 from core.security import generate_session_id
 from config.settings import base as settings
+
 
 JST = timezone(timedelta(hours=9))
 
@@ -51,4 +55,15 @@ class SessionService:
         )
         return result.mappings().first()
     
-        
+
+async def get_user_id(db: AsyncSession, session_id: str) -> int | None:
+    stmt = select(Session).filter(Session.session_id == session_id)
+    result = await db.execute(stmt)
+    session = result.scalars().first()
+    if not session:
+        return None
+
+    if session.expires_at < datetime.utcnow():
+        return None
+
+    return session.user_id
