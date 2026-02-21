@@ -6,6 +6,7 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { QuestionSelectionPage } from '@/pages/QuestionSelectionPage';
 import { InterviewSessionPage } from '@/pages/InterviewSessionPage';
+import { AnalysisResultPage } from '@/pages/AnalysisResultPage';
 import { SignupPage } from '@/pages/SignupPage';
 import { TopPage } from '@/pages/TopPage';
 import { HealthCheckPage } from '@/pages/dev/HealthCheckPage';
@@ -36,6 +37,7 @@ function App() {
                   <Route path="/questions" element={<QuestionSelectionPage />} />
                   <Route path="/authority-check/:questionId" element={<AuthorityCheckPage />} />
                   <Route path="/interview/session/:questionId" element={<InterviewSessionPage />} />
+                  <Route path="/analysis-result" element={<AnalysisResultPage />} />
                 </Route>
               </Routes>
             </BrowserRouter>

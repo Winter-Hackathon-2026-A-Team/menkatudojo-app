@@ -1,8 +1,8 @@
-"""add new table
+"""table再生成
 
-Revision ID: b2b9e30e1344
+Revision ID: b5aea91720bd
 Revises: 
-Create Date: 2026-02-20 23:31:09.673123
+Create Date: 2026-02-21 20:25:16.278715
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
-revision: str = 'b2b9e30e1344'
+revision: str = 'b5aea91720bd'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -28,6 +28,17 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('categories',
+    sa.Column('id', mysql.INTEGER(unsigned=True), autoincrement=True, nullable=False),
+    sa.Column('name', sa.VARCHAR(length=50), nullable=False),
+    sa.Column('description', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('sort_order', mysql.INTEGER(), server_default=sa.text('0'), nullable=False),
+    sa.Column('is_active', mysql.INTEGER(), server_default=sa.text('1'), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
     op.create_table('users',
     sa.Column('id', mysql.INTEGER(unsigned=True), autoincrement=True, nullable=False),
     sa.Column('public_id', sa.String(length=36), nullable=False),
@@ -42,17 +53,19 @@ def upgrade() -> None:
     op.create_table('questions',
     sa.Column('id', mysql.INTEGER(unsigned=True), autoincrement=True, nullable=False),
     sa.Column('owner_user_id', mysql.INTEGER(unsigned=True), nullable=True),
-    sa.Column('category', sa.VARCHAR(length=20), nullable=False),
+    sa.Column('category_id', mysql.INTEGER(unsigned=True), nullable=False),
     sa.Column('visibility', sa.VARCHAR(length=20), server_default=sa.text("'global'"), nullable=False),
     sa.Column('source', sa.VARCHAR(length=20), server_default=sa.text("'system'"), nullable=False),
-    sa.Column('question', sa.Text(), nullable=False),
+    sa.Column('question_text', sa.Text(), nullable=False),
     sa.Column('is_active', mysql.TINYINT(), server_default=sa.text('1'), nullable=False),
     sa.Column('sort_order', mysql.INTEGER(), server_default=sa.text('0'), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['owner_user_id'], ['users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_questions_category_id'), 'questions', ['category_id'], unique=False)
     op.create_table('sessions',
     sa.Column('id', mysql.INTEGER(unsigned=True), autoincrement=True, nullable=False),
     sa.Column('session_id', sa.String(length=64), nullable=False),
@@ -121,12 +134,20 @@ def upgrade() -> None:
     sa.UniqueConstraint('attempt_id')
     )
 
+    # テストデータ
     op.execute("""
-        INSERT INTO questions (id, category, question)
+        INSERT INTO categories (id, name)
         VALUES
-        (1, '自分紹介', '職歴を教えてください'),
-        (2, '志望動機', '志望動機を教えてください'),
-        (3, '志望動機', '同業他社ではなく、弊社を志望した理由を教えてください')
+        (1, '自己紹介'),
+        (2, '志望動機')
+    """)
+
+    op.execute("""
+        INSERT INTO questions (id, category_id, question_text)
+        VALUES
+        (1, 1, '職歴を教えてください'),
+        (2, 2, '志望動機を教えてください'),
+        (3, 2, '同業他社ではなく、弊社を志望した理由を教えてください')
     """)
 
     op.execute("""
@@ -171,6 +192,7 @@ def upgrade() -> None:
         (1, 1, '私が御社を志望した理由は...'),
         (2, 2, '私は新卒で...')
     """)
+
     # ### end Alembic commands ###
 
 
@@ -183,7 +205,50 @@ def downgrade() -> None:
     op.drop_table('attempts')
     op.drop_index('ix_sessions_user_id', table_name='sessions')
     op.drop_table('sessions')
+    op.drop_index(op.f('ix_questions_category_id'), table_name='questions')
     op.drop_table('questions')
     op.drop_table('users')
+    op.drop_table('categories')
     op.drop_table('avatars')
+
+    #　テストデータ削除
+    op.execute("""
+        DELETE FROM categories
+        WHERE id IN (1, 2)
+    """)
+    
+    op.execute("""
+        DELETE FROM questions
+        WHERE id IN (1, 2, 3)
+    """)
+
+    op.execute("""
+        DELETE FROM avatars
+        WHERE id IN (1, 2, 3)
+    """)
+
+    op.execute("""
+        DELETE FROM users
+        WHERE id IN (1)
+    """)
+
+    op.execute("""
+        DELETE FROM attempts
+        WHERE id IN (1, 2)
+    """)
+
+    op.execute("""
+        DELETE FROM recordings
+        WHERE id IN (1, 2)
+    """)
+
+    op.execute("""
+        DELETE FROM feedbacks
+        WHERE id IN (1, 2)
+    """)
+
+    op.execute("""
+        DELETE FROM transcripts
+        WHERE id IN (1, 2)
+    """)
     # ### end Alembic commands ###

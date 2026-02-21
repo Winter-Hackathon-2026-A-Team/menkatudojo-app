@@ -6,6 +6,7 @@ from models.transcript import Transcript
 from models.recording import Recording
 from models.feedback import Feedback
 from models.avatar import Avatar
+from models.category import Category
 from models.user import User
 import math
 from core.exceptions import ForbiddenError
@@ -47,14 +48,15 @@ async def get_history_list(db, user, page, limit):
     stmt = (
         select(
             Attempt.public_id,
-            Question.category,
+            Category.name,
             Attempt.created_at,
-            Question.question,
+            Question.question_text,
             Feedback.avatar_id,
             Avatar.personality_id,
             Feedback.grade,
         )
         .join(Question, Attempt.question_id == Question.id)
+        .join(Category, Category.id == Question.category_id)
         .join(Feedback, Feedback.attempt_id == Attempt.id)
         .join(Avatar, Avatar.id == Feedback.avatar_id)
         .where(Attempt.user_id == user.id)
@@ -73,8 +75,8 @@ async def get_history_list(db, user, page, limit):
     for row in rows:
         tgt_attempts.append({
             "answerId": row.public_id,
-            "categoryName": row.category,
-            "questionContent": row.question,
+            "categoryName": row.name,
+            "questionContent": row.question_text,
             "createdAt": row.created_at,
             "characterConfig": {
                 "avatarId": row.avatar_id,
@@ -102,8 +104,8 @@ async def get_history_detail(db, user, s3, answer_id):
     stmt = (
         select(
             Attempt.public_id.label("public_id"),
-            Question.category,
-            Question.question,
+            Category.name,
+            Question.question_text,
             Attempt.created_at,
             Feedback.avatar_id,
             Avatar.personality_id,
@@ -115,6 +117,7 @@ async def get_history_detail(db, user, s3, answer_id):
             Recording.storage_key,
         )
         .join(Question, Attempt.question_id == Question.id)
+        .join(Category, Category.id == Question.category_id)
         .join(Recording, Recording.attempt_id == Attempt.id)
         .join(Feedback, Feedback.attempt_id == Attempt.id)
         .join(Avatar, Avatar.id == Feedback.avatar_id)
@@ -143,8 +146,8 @@ async def get_history_detail(db, user, s3, answer_id):
 
     return {
         "answerId": row["public_id"],
-        "categoryName": row["category"],
-        "questionContent": row["question"],
+        "categoryName": row["name"],
+        "questionContent": row["question_text"],
         "createdAt": row["created_at"],
         "characterConfig": {
             "avatarId": row["avatar_id"],
