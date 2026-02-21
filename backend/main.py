@@ -104,17 +104,18 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
         content={"detail": exc.detail},
     )
 
-#セッションミドルウェアの設定
+
+# セッションミドルウェアを先に追加
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SECRET_KEY
+)
+
+# CSRFミドルウェアを追加
 app.add_middleware(
     CSRFMiddleware,
-    exempt_paths={
-        "/docs",
-        "/openapi.json",
-    },
-    protect_prefixes=("/api",),
-    #セッション機能を有効
-    SessionMiddleware,
-    secret_key=settings.SECRET_KEY,
+    exempt_paths={"/docs", "/openapi.json"},
+    protect_prefixes=("/api",)
 )
 
 #CORS設定
