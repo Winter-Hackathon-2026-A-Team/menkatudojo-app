@@ -38,3 +38,4 @@ class RecordingFileSizeExceededError(AppException):
 class InvalidRecordingMimeTypeError(AppException):
     code = "INVALID_RECORDING_MIMETYPE"
     status_code = 400
+

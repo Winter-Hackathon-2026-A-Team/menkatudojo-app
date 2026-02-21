@@ -1,8 +1,8 @@
-"""create table
+"""add new table
 
-Revision ID: 4b1a3fd1ea14
+Revision ID: b2b9e30e1344
 Revises: 
-Create Date: 2026-02-16 10:27:10.121782
+Create Date: 2026-02-20 23:31:09.673123
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
-revision: str = '4b1a3fd1ea14'
+revision: str = 'b2b9e30e1344'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -72,9 +72,9 @@ def upgrade() -> None:
     sa.Column('question_id', mysql.INTEGER(unsigned=True), nullable=False),
     sa.Column('status', sa.VARCHAR(length=20), server_default=sa.text("'created'"), nullable=False),
     sa.Column('duration_limit_s', mysql.SMALLINT(unsigned=True), server_default='90', nullable=False),
-    sa.Column('duration_s', mysql.SMALLINT(unsigned=True), nullable=False),
-    sa.Column('error_message', sa.VARCHAR(length=255), nullable=False),
-    sa.Column('deleted_at', sa.DateTime(), nullable=False),
+    sa.Column('duration_s', mysql.SMALLINT(unsigned=True), nullable=True),
+    sa.Column('error_message', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.ForeignKeyConstraint(['question_id'], ['questions.id'], ondelete='RESTRICT'),
@@ -88,8 +88,9 @@ def upgrade() -> None:
     sa.Column('avatar_id', mysql.INTEGER(unsigned=True), nullable=False),
     sa.Column('good_points', sa.Text(), nullable=False),
     sa.Column('improve_points', sa.Text(), nullable=False),
-    sa.Column('next_tip', sa.VARCHAR(length=255), nullable=False),
-    sa.Column('model_name', sa.VARCHAR(length=100), nullable=False),
+    sa.Column('next_tip', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('model_name', sa.VARCHAR(length=100), nullable=True),
+    sa.Column('grade', sa.Enum('A', 'B', 'C'), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.ForeignKeyConstraint(['attempt_id'], ['attempts.id'], ondelete='CASCADE'),
@@ -102,19 +103,81 @@ def upgrade() -> None:
     sa.Column('attempt_id', mysql.INTEGER(unsigned=True), nullable=False),
     sa.Column('storage_key', sa.VARCHAR(length=600), nullable=False),
     sa.Column('mime_type', sa.VARCHAR(length=50), server_default=sa.text("'video/webm'"), nullable=False),
-    sa.Column('size_bytes', mysql.BIGINT(unsigned=True), nullable=False),
+    sa.Column('size_bytes', mysql.BIGINT(unsigned=True), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.ForeignKeyConstraint(['attempt_id'], ['attempts.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('attempt_id')
     )
+    op.create_table('transcripts',
+    sa.Column('id', mysql.INTEGER(unsigned=True), autoincrement=True, nullable=False),
+    sa.Column('attempt_id', mysql.INTEGER(unsigned=True), nullable=False),
+    sa.Column('text', mysql.MEDIUMTEXT(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.ForeignKeyConstraint(['attempt_id'], ['attempts.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('attempt_id')
+    )
+
+    op.execute("""
+        INSERT INTO questions (id, category, question)
+        VALUES
+        (1, '自分紹介', '職歴を教えてください'),
+        (2, '志望動機', '志望動機を教えてください'),
+        (3, '志望動機', '同業他社ではなく、弊社を志望した理由を教えてください')
+    """)
+
+    op.execute("""
+        INSERT INTO avatars (id, personality_id)
+        VALUES
+        (1, 1),
+        (2, 2),
+        (3, 3)
+    """)
+
+    # password: hogehoge
+    op.execute("""
+        INSERT INTO users (id, public_id, email, password, username, is_active)
+        VALUES
+        (1, 'c302e892-0517-4238-b93c-bc2757707f58', 'test@example.com', '$argon2id$v=19$m=65536,t=3,p=4$2dsbo3Qu5fxf6z0HoHRuDQ$3giebVbHWCvOJxWNzR9kkYuYOhtHeISdUtYl551T4Fg', 'testUser1', 1)
+    """)
+    
+    op.execute("""
+        INSERT INTO attempts (id, public_id, user_id, question_id)
+        VALUES
+        (1, '3bc497e5-c2c2-40f8-841a-d1642c029ab9', 1, 2),
+        (2, '15785f1c-d7f5-446b-a3a1-189a5702ff89', 1, 1)
+    """)
+
+    op.execute("""
+        INSERT INTO recordings (id, attempt_id, storage_key)
+        VALUES
+        (1, 1, 'video/2024/01/73d6f01f-6cf4-4a51-92ed-6f4e2367721f'),
+        (2, 2, 'video/2024/01/475ed87a-22f4-45d3-8efb-c1e19dff461e')
+    """)
+
+    op.execute("""
+        INSERT INTO feedbacks (id, attempt_id, avatar_id, good_points, improve_points, next_tip, grade)
+        VALUES
+        (1, 1, 1, 'ハキハキ喋れてます！', '志望動機が他社でも成立するないようになってしまっています。', '志望がその企業ではなければダメだとわかる内容にしましょう！', 'B'),
+        (2, 2, 3, '基本的に大きな問題はありません。', 'もう少し定量的な表現を入れるとgoodです。', '定量的な表現にしましょう。', 'A')
+    """)
+
+    op.execute("""
+        INSERT INTO transcripts (id, attempt_id, text)
+        VALUES
+        (1, 1, '私が御社を志望した理由は...'),
+        (2, 2, '私は新卒で...')
+    """)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_table('transcripts')
     op.drop_table('recordings')
     op.drop_table('feedbacks')
     op.drop_table('attempts')

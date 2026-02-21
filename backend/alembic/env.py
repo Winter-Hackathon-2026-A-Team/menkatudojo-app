@@ -5,7 +5,8 @@ from alembic import context
 
 # Base と全モデルを import
 from database import Base
-from models import user, session, attempt, avatar, feedback, question, recording
+from models import user, session, attempt, avatar, feedback, question, recording, transcript
+# from models import *
 from config.settings import settings
 
 # Alembic Config object
