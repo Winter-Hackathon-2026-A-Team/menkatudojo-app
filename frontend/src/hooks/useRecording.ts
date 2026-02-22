@@ -14,7 +14,6 @@ export const useRecording = () => {
   const setReady = useCallback((q: Question, media: MediaState) => {
     streamRef.current = media.stream;
     setState({ phase: 'ready', question: q, mediaState: media });
-    console.log('準備完了');
   }, []);
 
   // B. 録画開始ロジック
@@ -68,7 +67,6 @@ export const useRecording = () => {
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
-      console.log('録画停止');
     }
   }, []);
 
@@ -91,7 +89,6 @@ export const useRecording = () => {
       // 状態の中に videoURL がある場合は、どのフェーズでも解放する
       if ('videoURL' in prev && prev.videoURL) {
         URL.revokeObjectURL(prev.videoURL);
-        console.log('videoURL解放');
       }
 
       // ready状態に戻す（question, mediaStateを維持）
@@ -113,7 +110,6 @@ export const useRecording = () => {
     return () => {
       // 1. 録画中であれば強制停止
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        console.log('アンマウントされたのでMediaRecorderをstop');
         mediaRecorderRef.current.stop();
       }
 
@@ -121,7 +117,6 @@ export const useRecording = () => {
       setState((prev) => {
         if ('videoURL' in prev && prev.videoURL) {
           URL.revokeObjectURL(prev.videoURL);
-          console.log('アンマウントされたのでvideoURLを解放');
         }
         return prev;
       });
@@ -170,7 +165,6 @@ export const useRecording = () => {
     // 時間切れ監視（state.elapsedを直接見ず、内部の条件式で完結させる）
     if (state.elapsed >= state.totalSeconds) {
       stopRecording();
-      console.log('時間切れで録画停止');
     }
   }, [state.phase, startRecording, stopRecording]);
 

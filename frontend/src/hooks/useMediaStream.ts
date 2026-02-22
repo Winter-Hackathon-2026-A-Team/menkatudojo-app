@@ -42,7 +42,6 @@ export const useMediaStream = () => {
 
       return stream;
     } catch (err: any) {
-      console.log('接続エラー:', err);
       // TODO：ここでエラーオブジェクトをセット
       return null;
     }

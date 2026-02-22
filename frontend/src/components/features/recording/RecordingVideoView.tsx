@@ -24,7 +24,6 @@ export const RecordingVideoView = ({
     const video = videoRef.current;
     if (video && currentStream && state.phase !== 'completed') {
       if (video.srcObject !== currentStream) {
-        console.log('Connecting stream to video element...');
         video.srcObject = currentStream;
       }
     }
