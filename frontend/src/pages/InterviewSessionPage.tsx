@@ -1,4 +1,3 @@
-// TODO: onCloseをモーダル展開→確認後に終了に変更する
 import { AnalysisOverlay } from '@/components/features/recording/AnalysisOverlay';
 import { RecordingControls } from '@/components/features/recording/RecordingControls';
 import { RecordingHeader } from '@/components/features/recording/RecordingHeader';
@@ -9,8 +8,16 @@ import { useMediaStream } from '@/hooks/useMediaStream';
 import { useQuestion } from '@/hooks/useQuestion';
 import { useRecording } from '@/hooks/useRecording';
 import { useUploadAnswer } from '@/hooks/useUploadAnswer';
-import { FeedbackData } from '@/types/recording';
-import { Box } from '@mui/material';
+import { AnalysisResponse } from '@/types/recording';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -18,6 +25,7 @@ export const InterviewSessionPage = () => {
   const { questionId } = useParams();
   const navigate = useNavigate();
   const { videoRef, mediaState, setupDevices } = useMediaStream();
+  const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
 
   // 1. マウント時にlocalStorageから設定を復元
   const [characterConfig] = useState(() => {
@@ -37,7 +45,6 @@ export const InterviewSessionPage = () => {
   const { data: question, isLoading: isQuestionLoading, isError } = useQuestion(questionId);
   // デバッグ用
   if (isError) {
-    console.log('質問内容取得に失敗');
     return null;
   }
 
@@ -85,6 +92,20 @@ export const InterviewSessionPage = () => {
     };
   }, [question, state.phase]);
 
+  const handleCloseRequest = () => {
+    // 録画中、または録画完了（未保存）の状態なら警告を出す
+    if (state.phase === 'recording' || state.phase === 'completed') {
+      setIsExitConfirmOpen(true);
+    } else {
+      // それ以外の状態（readyなど）なら即終了
+      navigate(-1);
+    }
+  };
+  const handleConfirmExit = () => {
+    cancelAll();
+    navigate(-1);
+  };
+
   // アンマウント時にポーリングを停止
   useEffect(() => {
     return () => cancelAll();
@@ -96,8 +117,8 @@ export const InterviewSessionPage = () => {
 
     await startUploadAndAnalysis(
       state.videoBlob,
-      state.question.questionId,
-      characterConfig.avatarId, // 取得したIDを注入
+      Number(state.question.questionId),
+      characterConfig.avatarId,
       characterConfig.personalityId,
       (phase, details) => {
         setState((prev) => ({
@@ -106,10 +127,8 @@ export const InterviewSessionPage = () => {
           ...(details || {}),
         }));
       },
-      (feedback: FeedbackData) => {
-        // 成功時：結果画面へ（履歴に残さないようreplace）
-        console.log('分析結果:', feedback);
-        navigate('/analysis-result', { state: { feedback }, replace: true });
+      (response: AnalysisResponse) => {
+        navigate(`/analysis-result/${response.answerId}`, { replace: true });
       },
     );
   };
@@ -124,8 +143,37 @@ export const InterviewSessionPage = () => {
         flexDirection: 'column',
       }}
     >
-      <RecordingHeader state={state} isLoading={isQuestionLoading} onClose={() => navigate(-1)} />{' '}
-      {/* TODO: モーダル展開させる */}
+      <RecordingHeader state={state} isLoading={isQuestionLoading} onClose={handleCloseRequest} />
+      {/* 終了確認ダイアログ */}
+      <Dialog
+        open={isExitConfirmOpen}
+        onClose={() => setIsExitConfirmOpen(false)}
+        slotProps={{
+          paper: {
+            sx: {
+              bgcolor: '#222',
+              color: 'white',
+              p: 1,
+              backgroundImage: 'none',
+            },
+          },
+        }}
+      >
+        <DialogTitle>練習を終了しますか？</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: 'rgba(255,255,255,0.7)' }}>
+            録画データは保存されません。本当に終了しますか？
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setIsExitConfirmOpen(false)} sx={{ color: 'white' }}>
+            キャンセル
+          </Button>
+          <Button onClick={handleConfirmExit} variant="contained" color="error">
+            終了する
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Box
         sx={{
           flexGrow: 1,
