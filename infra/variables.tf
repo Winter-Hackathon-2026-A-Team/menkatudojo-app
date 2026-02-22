@@ -114,12 +114,6 @@ variable "webhook_url" {
   sensitive   = true
   default     = ""
 }
-#各自でipアドレスの設定をする必要あり
-variable "allowed_cidr_blocks" {
-  description = "管理アクセスを許可するCIDRブロック"
-  type        = list(string)
-  default     = ["0.0.0.0/0"]
-}
 
 variable "enable_nat_gateway" {
   description = "NAT Gatewayを有効化するか"

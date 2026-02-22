@@ -79,7 +79,7 @@ resource "aws_lambda_function" "audio_extractor" {
   }
 
   # FFmpeg レイヤーの有効化
-  layers = ["arn:aws:lambda:ap-northeast-1:464656304411:layer:ffmpeg:1"]
+  layers = var.lambda_layer_arn != "" ? [var.lambda_layer_arn] : []
 }
 
 # S3 イベント通知設定
