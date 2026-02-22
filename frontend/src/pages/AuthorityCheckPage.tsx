@@ -1,4 +1,5 @@
 // TODO: コンテンツエリアを役割ごとにコンポーネントに切り出す
+import { DeviceErrorView } from '@/components/features/authority-check/DeviceErrorView';
 import { PersonalitySelector } from '@/components/features/authority-check/PersonalitySelector';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -72,12 +73,21 @@ export const AuthorityCheckPage = () => {
       hasNotifiedRef.current = true;
     }
 
-    // デバイスが外れた（エラーになった）場合はフラグをリセットし、
-    // 次回また準備ができた時に通知できるようにする
     if (!isReady) {
       hasNotifiedRef.current = false;
     }
   }, [isReady, showMessage]);
+
+  if (mediaState.error) {
+    return (
+      <MainLayout>
+        <PageHeader leftSlot={<Typography variant="h6">デバイスエラー</Typography>} />
+        <Box sx={{ py: 8 }}>
+          <DeviceErrorView error={mediaState.error} onRetry={setupDevices} />
+        </Box>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

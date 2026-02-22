@@ -20,6 +20,8 @@ export const RecordingVideoView = ({
   isQuestionLoading,
 }: Props) => {
   const [isVideoReady, setIsVideoReady] = useState(false);
+
+  // 1. ストリームのセット
   useEffect(() => {
     const video = videoRef.current;
     if (video && currentStream && state.phase !== 'completed') {
@@ -29,6 +31,10 @@ export const RecordingVideoView = ({
     }
   }, [state.phase, currentStream, videoRef]);
 
+  // 2. 状態によるフラグの抽出
+  const isRecording = state.phase === 'recording';
+  const isEndingSoon = isRecording && state.isEndingSoon;
+
   const formatTime = (seconds: number) => {
     const mm = Math.floor(seconds / 60)
       .toString()
@@ -37,19 +43,19 @@ export const RecordingVideoView = ({
     return `${mm}:${ss}`;
   };
 
-  // initializing: Video準備フラグ：false
+  // 3. 初期化時のリセット
   useEffect(() => {
     if (state.phase === 'initializing') {
       setIsVideoReady(false);
     }
   }, [state.phase]);
-  
-  // 画面のチラつき防止のためにタイムラグを設定
+
   const onVideoLoad = () => {
     setTimeout(() => {
       setIsVideoReady(true);
     }, 1000);
   };
+
   return (
     <Box
       sx={{
@@ -58,8 +64,19 @@ export const RecordingVideoView = ({
         height: 'min(100%, calc(100vw * 9 / 16))',
         borderRadius: 2,
         overflow: 'hidden',
-        border: '2px solid #333',
         bgcolor: 'black',
+        // --- 残り5秒で枠を赤 ---
+        border: isEndingSoon ? '4px solid #ff1744' : '2px solid #333',
+        boxShadow: isEndingSoon ? '0 0 20px rgba(255, 23, 68, 0.6)' : 'none',
+        transition: 'all 0.3s ease-in-out',
+        ...(isEndingSoon && {
+          animation: 'pulse-border 1s infinite',
+        }),
+        '@keyframes pulse-border': {
+          '0%': { opacity: 1 },
+          '50%': { opacity: 0.7 },
+          '100%': { opacity: 1 },
+        },
       }}
     >
       {state.phase === 'completed' ? (
@@ -86,7 +103,9 @@ export const RecordingVideoView = ({
               transition: 'opacity 0.8s ease-in-out',
             }}
           />
-          {state.phase === 'recording' && (
+
+          {/* 録画中バッジとタイマー */}
+          {isRecording && (
             <Box
               sx={{
                 position: 'absolute',
@@ -95,15 +114,29 @@ export const RecordingVideoView = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
-                bgcolor: 'rgba(0,0,0,0.6)',
+                bgcolor: isEndingSoon ? 'rgba(255, 23, 68, 0.8)' : 'rgba(0,0,0,0.6)',
                 px: 2,
                 py: 0.5,
                 borderRadius: 2,
                 zIndex: 2,
+                transition: 'background-color 0.3s ease',
               }}
             >
-              <FiberManualRecordIcon sx={{ color: 'error.main', fontSize: 18 }} />
-              <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>
+              <FiberManualRecordIcon
+                sx={{
+                  color: '#ff1744',
+                  fontSize: 18,
+                  animation: 'blink 1s infinite step-end',
+                }}
+              />
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontFamily: 'monospace',
+                  fontWeight: 'bold',
+                  color: 'white',
+                }}
+              >
                 {formatTime(Math.max(0, state.totalSeconds - state.elapsed))}
               </Typography>
             </Box>
@@ -111,10 +144,12 @@ export const RecordingVideoView = ({
         </>
       )}
 
+      {/* カウントダウン */}
       {state.phase === 'countdown' && state.count !== undefined && (
         <CountdownOverlay count={state.count} interviewer={interviewer} />
       )}
 
+      {/* ローディングオーバーレイ */}
       {(state.phase === 'initializing' || !isVideoReady) && (
         <Box
           sx={{
@@ -135,22 +170,22 @@ export const RecordingVideoView = ({
         </Box>
       )}
 
-      {/* アバター表示 */}
+      {/* 面接官アバター */}
       <Box
         sx={{
           position: 'absolute',
-          top: '1%',
-          left: '1%',
+          top: '1.5%',
+          left: '1.5%',
           width: '20%',
           aspectRatio: '1 / 1',
           borderRadius: '50%',
           overflow: 'hidden',
           zIndex: 2,
-          border: '3px solid rgba(255, 255, 255, 0.3)',
-          // bgcolor: '#000',
+          border: isEndingSoon ? '3px solid #ff1744' : '3px solid rgba(255, 255, 255, 0.3)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          transition: 'border 0.3s ease',
         }}
       >
         <img
@@ -164,6 +199,15 @@ export const RecordingVideoView = ({
           }}
         />
       </Box>
+
+      <style>
+        {`
+          @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+          }
+        `}
+      </style>
     </Box>
   );
 };

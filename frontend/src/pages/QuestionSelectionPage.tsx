@@ -65,15 +65,19 @@ export const QuestionSelectionPage = () => {
 
   // 500系エラー
   if (isCriticalError) {
-    return <ErrorView message={getErrorMessage(error)} onRetry={() => window.location.reload()} />; // リロードで対応
+    return (
+      <MainLayout>
+        <ErrorView message={getErrorMessage(error)} onRetry={refetch} />
+      </MainLayout>
+    );
   }
 
   // データが空、または400系エラー時の表示
   if (isClientError) {
     return (
       <EmptyContentView
-        message={getErrorMessage(error)}
-        onRetry={() => refetch()} // APIの再叩きで対応
+        message="指定された質問が見つかりません。"
+        onRetry={() => navigate('/questions')}
       />
     );
   }

@@ -1,4 +1,4 @@
-import { MediaState } from '@/types/media';
+import { MediaErrorType, MediaState } from '@/types/media';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const useMediaStream = () => {
@@ -42,7 +42,36 @@ export const useMediaStream = () => {
 
       return stream;
     } catch (err: any) {
-      // TODO：ここでエラーオブジェクトをセット
+      // エラー対応
+      const errorName = err.name;
+
+      let type: MediaErrorType = 'unknown';
+      let detail = 'デバイスの起動に失敗しました。';
+
+      if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+        type = 'permission_denied';
+        detail =
+          'カメラ・マイクの使用が許可されていません。ブラウザの設定で許可を有効にしてください。';
+      } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+        type = 'device_not_found';
+        detail = 'デバイスが見つかりません。接続を確認してください。';
+      } else if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+        type = 'already_in_use';
+        detail = '他のアプリがカメラやマイクを使用中です。';
+      }
+
+      setMediaState((prev) => ({
+        ...prev,
+        videoStatus: 'error',
+        audioStatus: 'error',
+        stream: null,
+        error: {
+          type,
+          device: 'both',
+          detail,
+        },
+      }));
+
       return null;
     }
   }, []);

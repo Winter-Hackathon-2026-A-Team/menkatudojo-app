@@ -15,8 +15,13 @@ export type RecordingState =
   | { phase: 'initializing'; mediaState?: MediaState } // 初期化時のみ question がない
   | ({ phase: 'ready' } & RecordingBase)
   | ({ phase: 'countdown'; count: number } & RecordingBase)
-  | ({ phase: 'recording'; elapsed: number; totalSeconds: number } & RecordingBase)
-  | ({ phase: 'completed'; videoBlob: Blob; videoURL: string } & RecordingBase)
+  | ({
+      phase: 'recording';
+      elapsed: number;
+      totalSeconds: number;
+      isEndingSoon: boolean;
+    } & RecordingBase)
+  | ({ phase: 'completed'; videoBlob: Blob; videoURL: string; elapsed: number } & RecordingBase)
   | ({ phase: 'uploading'; progress: number } & RecordingBase)
   | ({ phase: 'analyzing'; pollCount: number } & RecordingBase)
   | ({ phase: 'error'; error: RecordingError } & RecordingBase);
