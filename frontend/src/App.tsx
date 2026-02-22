@@ -33,7 +33,7 @@ function App() {
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/dev/health" element={<HealthCheckPage />} />
 
-                <Route element={<AuthGuard children={<Outlet />} />}>
+                <Route element={<AuthGuard />}>
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/questions" element={<QuestionSelectionPage />} />
                   <Route path="/authority-check/:questionId" element={<AuthorityCheckPage />} />
