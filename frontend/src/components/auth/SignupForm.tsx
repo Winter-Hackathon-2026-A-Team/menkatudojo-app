@@ -13,7 +13,7 @@ interface SignupFormProps {
   };
 }
 
-export const SignupForm = ({ onSignup, isLoading , externalErrors}: SignupFormProps) => {
+export const SignupForm = ({ onSignup, isLoading, externalErrors }: SignupFormProps) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
@@ -35,8 +35,11 @@ export const SignupForm = ({ onSignup, isLoading , externalErrors}: SignupFormPr
     let isValid = true;
 
     // ユーザーネームバリデーション
-    if (!username) {
+    if (!username.trim()) {
       setUsernameError('ユーザー名を入力してください');
+      isValid = false;
+    } else if (username.length > 100) {
+      setUsernameError('ユーザー名は100文字以内で入力してください');
       isValid = false;
     } else {
       setUsernameError('');
@@ -66,6 +69,9 @@ export const SignupForm = ({ onSignup, isLoading , externalErrors}: SignupFormPr
       isValid = false;
     } else if (password.length < 8) {
       setPasswordError('パスワードは8文字以上で入力してください');
+      isValid = false;
+    } else if (password.length > 64) {
+      setPasswordError('パスワードは64文字以内で入力してください');
       isValid = false;
     } else {
       setPasswordError('');
