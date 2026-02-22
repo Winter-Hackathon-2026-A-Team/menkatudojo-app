@@ -15,6 +15,13 @@ export const theme = createTheme({
     },
     error: {
       main: '#B22222',
+      light: '#FFEBEE',
+    },
+    info: {
+      main: '#1976D2',
+    },
+    warning: {
+      main: '#DAA520'
     },
     background: {
       default: '#FAF9F6',
