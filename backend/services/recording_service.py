@@ -6,7 +6,7 @@ from models.feedback import Feedback
 from datetime import datetime
 from config.settings import settings
 from zoneinfo import ZoneInfo
-
+from sqlalchemy import select
 
 
 async def create_presigned_url(db, s3, user, req):
@@ -79,3 +79,30 @@ async def _create_feedback_record(db, attempt, req):
     await db.flush()
 
     return feedback
+
+
+class RecordingService:
+    def __init__(self, db):
+        self.db = db
+
+    async def upsert_recording(self, attempt_id: int, storage_key: str, mime_type: str, size_bytes: int):
+        stmt = select(Recording).where(Recording.attempt_id == attempt_id)
+        result = await self.db.execute(stmt)
+        rec = result.scalar_one_or_none()
+
+        if rec is None:
+            rec = Recording(attempt_id=attempt_id, storage_key=storage_key)
+            if hasattr(rec, "mime_type"):
+                rec.mime_type = mime_type
+            if hasattr(rec, "size_bytes"):
+                rec.size_bytes = size_bytes
+            self.db.add(rec)
+        else:
+            rec.storage_key = storage_key
+            if hasattr(rec, "mime_type"):
+                rec.mime_type = mime_type
+            if hasattr(rec, "size_bytes"):
+                rec.size_bytes = size_bytes
+
+        await self.db.commit()
+        return rec

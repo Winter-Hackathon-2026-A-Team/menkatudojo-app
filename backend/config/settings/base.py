@@ -20,7 +20,9 @@ class Settings(BaseSettings):
     S3_ENDPOINT_URL: str | None = None
     S3_BUCKET_NAME: str
     TZ: str
-
+    # GEMINI_API_KEY: str = ""
+    AI_FEEDBACK_MODE: str = os.getenv("AI_FEEDBACK_MODE", "gemini")
+    
     class Config:
         env_file = ".env"
 

@@ -1,6 +1,6 @@
 from sqlalchemy import VARCHAR, Integer, DateTime, ForeignKey, text, func
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.dialects.mysql import INTEGER, BIGINT
+from sqlalchemy.dialects.mysql import INTEGER
 from datetime import datetime
 from database import Base
 
@@ -33,7 +33,7 @@ class Recording(Base):
     )
 
     size_bytes: Mapped[int] = mapped_column(
-        BIGINT(unsigned=True),
+        INTEGER(unsigned=True),
         nullable=True
     )
 

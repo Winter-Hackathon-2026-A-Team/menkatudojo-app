@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
-from schemas.questions import questionContentResponse
-from schemas.question import QuestionCreateRequest
-from routers.dependencies import get_current_user
+from schemas.questions import questionContentResponse, QuestionCreateRequest
+from dependencies.auth import get_current_user
 from core.security import verify_csrf
 from services import question_service
 from database import get_db

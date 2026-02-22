@@ -3,6 +3,12 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.mysql import INTEGER, CHAR, SMALLINT
 from datetime import datetime
 from database import Base
+import enum
+
+class FeedbackGrade(str, enum.Enum):
+    A = "A"
+    B = "B"
+    C = "C"
 
 
 class Feedback(Base):

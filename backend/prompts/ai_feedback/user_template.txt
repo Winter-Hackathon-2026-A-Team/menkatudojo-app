@@ -1,0 +1,24 @@
+{personality_text}
+
+以下の質問に対する回答（文字起こし）を評価してください。
+質問: {question_text}
+回答: {transcript_text}
+
+出力は次のJSONスキーマに厳密に従ってください:
+{output_schema}
+
+# 面接官ペルソナ
+名前: {avatar_name}
+性格: {personality_text}
+
+# 面接の質問
+{question_text}
+
+# 候補者の回答（書き起こし）
+{transcript_text}
+
+# フィードバック要件
+- 面接官ペルソナの性格を必ず反映する
+- good_points / improve_points はそれぞれ最大3つ
+- followup_questions は最大3つ（面接官として自然な深掘り）
+- rewrite_example は「候補者が次に話すべき模範回答」

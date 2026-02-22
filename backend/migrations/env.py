@@ -7,6 +7,13 @@ from alembic import context
 from database import Base
 from models.question import Question
 from models.category import Category
+from models.transcript import Transcript
+from models.recording import Recording
+from models.feedback import Feedback
+from models.attempt import Attempt
+from models.avatar import Avatar
+from models.recording import Recording
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
