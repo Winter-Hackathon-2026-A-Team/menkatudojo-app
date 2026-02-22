@@ -76,7 +76,9 @@ export interface AnalysisResponse {
     avatarId: number;
     personalityId: number;
   };
+  transcript: string | null;
   feedback: FeedbackData | null;
+  questionContent?: string;
   error?: {
     code: string;
     message: string;
@@ -84,11 +86,35 @@ export interface AnalysisResponse {
 }
 
 export interface FeedbackData {
-  score: string;
+  grade: string;
   goodPoints: string;
   improvePoints: string;
   nextTip: string;
   interviewerComment?: string; // 今後、面接官からのコメントも作る場合
   videoUrl: string;
   storageKey: string;
+}
+
+// 履歴一覧取得
+export interface HistoryItem {
+  answerId: string;
+  categoryName: string;
+  questionContent: string;
+  createdAt: string;
+  characterConfig: {
+    avatarId: number;
+    personalityId: number;
+  };
+  feedback: {
+    grade: string;
+  };
+}
+
+export interface HistoryResponse {
+  answers: HistoryItem[];
+  meta: {
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+  };
 }
