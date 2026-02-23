@@ -22,8 +22,7 @@ async def create_presigned_url(db, s3, user, req):
             ClientMethod="put_object",
             Params={
                 "Bucket": settings.S3_BUCKET_NAME,
-                "Key": recording.storage_key,
-                "ContentType": settings.ALLOW_RECORDING_MIME_TYPE,
+                "Key": recording.storage_key
             },
                 ExpiresIn=300,
         )
@@ -59,7 +58,7 @@ async def _create_recording_record(db, attempt):
     now = datetime.now(ZoneInfo(settings.TZ))
     recording = Recording(
         attempt_id=attempt.id,
-        storage_key=f"recordings/{now:%Y}/{now:%m}/{attempt.public_id}/{uuid4()}.webm"
+        storage_key=f"recordings/{now:%Y}/{now:%m}/{attempt.public_id}_{uuid4()}.webm"
     )
 
     db.add(recording)

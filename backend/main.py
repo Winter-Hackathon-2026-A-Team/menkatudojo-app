@@ -37,7 +37,7 @@ def custom_openapi():
         "CSRF": {
             "type": "apiKey",
             "in": "header",
-            "name": "X-CSRF-Token"
+            "name": "x-xsrf-token"
         }
     }
 
