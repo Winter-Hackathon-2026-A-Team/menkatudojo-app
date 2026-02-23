@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
+from typing import List
 
 
 class QuestionCreateRequest(BaseModel):
@@ -30,3 +31,21 @@ class QuestionResponse(BaseModel):
 class RandomFromSelectionRequest(BaseModel):
     question_ids: list[int] = Field(min_length=1)
 
+class questionContentResponse(BaseModel):
+    questionId: int
+    categoryName: str
+    questionContent: str
+    source: str
+    sortOrder: int
+    durationLimitSeconds: int
+
+class QuestionItem(BaseModel):
+    questionId: int
+    categoryName: str
+    questionContent: str
+    source: str
+    sortOrder: int
+    durationLimitSeconds: int
+
+class QuestionGetResponse(BaseModel):
+    questions: List[QuestionItem]

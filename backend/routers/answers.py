@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from schemas.answers import PreUploadRequest, PreUploadResponse, HistoryListResponse, HistoryDetailResponse
+
 from routers.dependencies import get_current_user
 from core.security import verify_csrf
 from services import recording_service, history_service
@@ -10,8 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/api/answers", tags=["answers"])
 
+# テスト
+# @router.post("/pre-upload")
+# async def create_presigned_url(request: Request):
+#     body = await request.json()
+#     print("Raw JSON received:", body)
+
 # 署名付きURLの生成
-@router.post("/pre-upload", dependencies=[Depends(verify_csrf)], response_model=PreUploadResponse)
+@router.post("/pre-upload", response_model=PreUploadResponse)
 async def create_presigned_url(
     req: PreUploadRequest,
     db: AsyncSession = Depends(get_db),
