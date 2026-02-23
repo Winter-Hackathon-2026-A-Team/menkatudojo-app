@@ -5,4 +5,5 @@ export interface Personality {
   name: string;  // alt属性用
   avatarUrl: string;    // アバター画像のパス
   description?: string;  // 師範の説明（UI表示用）
+  message: string; // アップロード中に出すメッセージ
 }

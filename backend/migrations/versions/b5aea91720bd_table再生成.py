@@ -166,10 +166,10 @@ def upgrade() -> None:
     """)
     
     op.execute("""
-        INSERT INTO attempts (id, public_id, user_id, question_id)
+        INSERT INTO attempts (id, public_id, user_id, question_id, status)
         VALUES
-        (1, '3bc497e5-c2c2-40f8-841a-d1642c029ab9', 1, 2),
-        (2, '15785f1c-d7f5-446b-a3a1-189a5702ff89', 1, 1)
+        (1, '3bc497e5-c2c2-40f8-841a-d1642c029ab9', 1, 2, 'completed'),
+        (2, '15785f1c-d7f5-446b-a3a1-189a5702ff89', 1, 1, 'completed')
     """)
 
     op.execute("""

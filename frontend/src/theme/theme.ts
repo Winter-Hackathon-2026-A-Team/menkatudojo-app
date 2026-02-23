@@ -9,20 +9,29 @@ export const theme = createTheme({
     secondary: {
       main: '#5D4037',
     },
+    success: {
+      main: '#2E6B5A',
+      light: '#E8F5E9',
+    },
     error: {
       main: '#B22222',
+      light: '#FFEBEE',
+    },
+    info: {
+      main: '#1976D2',
+    },
+    warning: {
+      main: '#DAA520'
     },
     background: {
-      default: '#FAF9F6', // 画面全体のバックグラウンド
-      paper: '#E8F5E9', // カード等の背景色（薄い緑）
+      default: '#FAF9F6',
+      paper: '#FFFFFF',
     },
     text: {
       primary: '#333333',
     },
   },
-  // ボタンの角丸など
   shape: {
     borderRadius: 8,
   },
 });
-// フォントなどもここで共通化できる

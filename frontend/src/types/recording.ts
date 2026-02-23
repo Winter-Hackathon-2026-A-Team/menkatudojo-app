@@ -15,8 +15,13 @@ export type RecordingState =
   | { phase: 'initializing'; mediaState?: MediaState } // 初期化時のみ question がない
   | ({ phase: 'ready' } & RecordingBase)
   | ({ phase: 'countdown'; count: number } & RecordingBase)
-  | ({ phase: 'recording'; elapsed: number; totalSeconds: number } & RecordingBase)
-  | ({ phase: 'completed'; videoBlob: Blob; videoURL: string } & RecordingBase)
+  | ({
+      phase: 'recording';
+      elapsed: number;
+      totalSeconds: number;
+      isEndingSoon: boolean;
+    } & RecordingBase)
+  | ({ phase: 'completed'; videoBlob: Blob; videoURL: string; elapsed: number } & RecordingBase)
   | ({ phase: 'uploading'; progress: number } & RecordingBase)
   | ({ phase: 'analyzing'; pollCount: number } & RecordingBase)
   | ({ phase: 'error'; error: RecordingError } & RecordingBase);
@@ -69,26 +74,58 @@ export interface PreUploadResponse {
 // 分析状態確認
 export type AnalysisStatus = 'pending' | 'uploaded' | 'processing' | 'completed' | 'failed';
 
-export interface AnalysisResponse {
+export interface AnswerDetail {
   answerId: string;
   analysisStatus: AnalysisStatus;
+  categoryName: string;
+  questionContent: string;
+  createdAt: string;
   characterConfig: {
     avatarId: number;
     personalityId: number;
   };
+  transcript: string | null;
   feedback: FeedbackData | null;
-  error?: {
-    code: string;
-    message: string;
-  };
 }
 
 export interface FeedbackData {
-  score: string;
+  grade: string;
   goodPoints: string;
   improvePoints: string;
   nextTip: string;
   interviewerComment?: string; // 今後、面接官からのコメントも作る場合
   videoUrl: string;
   storageKey: string;
+}
+
+export interface AnalysisResponse extends AnswerDetail {
+  analysisStatus: AnalysisStatus;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+// 履歴一覧取得
+export interface HistoryItem {
+  answerId: string;
+  categoryName: string;
+  questionContent: string;
+  createdAt: string;
+  characterConfig: {
+    avatarId: number;
+    personalityId: number;
+  };
+  feedback: {
+    grade: string;
+  };
+}
+
+export interface HistoryResponse {
+  answers: HistoryItem[];
+  meta: {
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+  };
 }
