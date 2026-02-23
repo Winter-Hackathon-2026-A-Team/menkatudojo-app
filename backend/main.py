@@ -21,6 +21,7 @@ from routers.auth import router as auth_router
 from routers.answers import router as answers_router
 from routers.questions import router as questions_router
 from routers.categories import router as categories_router
+from routers.users import router as user_router
 from fastapi.openapi.utils import get_openapi
 
 def custom_openapi():
@@ -136,6 +137,7 @@ app.include_router(auth_router)
 app.include_router(answers_router)
 app.include_router(questions_router)
 app.include_router(categories_router)
+app.include_router(user_router)
 
 # Swagger UI設定
 app.openapi = custom_openapi
