@@ -4,7 +4,7 @@ from alembic import context
 import os
 
 from database import Base
-from models import user, session, attempt, avatar, feedback, question, recording, category
+from models import user, session, attempt, avatar, feedback, question, recording, category, transcript
 
 config = context.config
 
