@@ -16,7 +16,6 @@ export const AnalysisResultPage = () => {
   if (isLoading) return <LoadingView />;
   if (isError || !data) return <Navigate to="/questions" replace />;
 
-  // 希少価値視点：status が completed でない、または feedback が無い場合は表示させない
   if (data.analysisStatus !== 'completed' || !data.feedback) {
     return <Box p={4}>分析が完了していません。再度時間をおいて確認してください。</Box>;
   }

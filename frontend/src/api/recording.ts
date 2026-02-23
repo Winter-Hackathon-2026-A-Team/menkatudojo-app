@@ -35,7 +35,7 @@ export const uploadToS3 = async (url: string, blob: Blob, onProgress?: (p: numbe
     onUploadProgress: (e) => {
       const percent = Math.round((e.loaded * 100) / (e.total ?? 1)); // 何バイト送ったか監視
       onProgress?.(percent);
-    }
+    },
   });
 };
 
@@ -59,30 +59,3 @@ export const fetchHistory = async (
   });
   return data;
 };
-
-
-/**
- * 分析ステータス確認 / 履歴詳細取得
- */
-// export const checkAnalysisStatus = async (answerId: string): Promise<any> => {
-//   // 通信ラグのシミュレーション
-//   await new Promise((resolve) => setTimeout(resolve, 500));
-
-//   return {
-//     answerId: answerId,
-//     analysisStatus: "completed",
-//     characterConfig: {
-//       avatarId: 1,
-//       personalityId: 1
-//     },
-//     transcript: "ユーザーが回答した内容..",
-//     feedback: {
-//       grade: "A",
-//       goodPoints: "良い点のフィードバック。",
-//       improvePoints: "改善点のフィードバック。",
-//       nextTip: "次への一言。",
-//       videoUrl: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
-//       storageKey: `recordings/${answerId}.webm`
-//     }
-//   };
-// };

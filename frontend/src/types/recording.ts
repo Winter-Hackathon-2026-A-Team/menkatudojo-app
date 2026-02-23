@@ -74,20 +74,18 @@ export interface PreUploadResponse {
 // 分析状態確認
 export type AnalysisStatus = 'pending' | 'uploaded' | 'processing' | 'completed' | 'failed';
 
-export interface AnalysisResponse {
+export interface AnswerDetail {
   answerId: string;
   analysisStatus: AnalysisStatus;
+  categoryName: string;
+  questionContent: string;
+  createdAt: string;
   characterConfig: {
     avatarId: number;
     personalityId: number;
   };
   transcript: string | null;
   feedback: FeedbackData | null;
-  questionContent?: string;
-  error?: {
-    code: string;
-    message: string;
-  };
 }
 
 export interface FeedbackData {
@@ -98,6 +96,14 @@ export interface FeedbackData {
   interviewerComment?: string; // 今後、面接官からのコメントも作る場合
   videoUrl: string;
   storageKey: string;
+}
+
+export interface AnalysisResponse extends AnswerDetail {
+  analysisStatus: AnalysisStatus;
+  error?: {
+    code: string;
+    message: string;
+  };
 }
 
 // 履歴一覧取得

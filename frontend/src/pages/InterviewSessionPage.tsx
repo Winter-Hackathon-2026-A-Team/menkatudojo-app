@@ -20,6 +20,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -28,6 +29,7 @@ export const InterviewSessionPage = () => {
   const navigate = useNavigate();
   const { videoRef, mediaState, setupDevices } = useMediaStream();
   const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   // 1. 設定の復元（アバター・性格）
   const [characterConfig] = useState(() => {
@@ -125,6 +127,7 @@ export const InterviewSessionPage = () => {
         }));
       },
       (response: AnalysisResponse) => {
+        queryClient.setQueryData(['analysisResult', response.answerId], response);
         navigate(`/analysis-result/${response.answerId}`, { replace: true });
       },
     );
