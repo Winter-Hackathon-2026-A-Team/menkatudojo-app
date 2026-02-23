@@ -80,10 +80,17 @@ export const useMediaStream = () => {
     // cleanup 処理のみ
     return () => {
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
+        // 1. 全てのトラックを停止
+        streamRef.current.getTracks().forEach((track) => {
+          track.stop();
+          track.enabled = false;
+        });
+
         if (videoRef.current) {
           videoRef.current.srcObject = null;
+          videoRef.current.load();
         }
+
         streamRef.current = null;
       }
     };

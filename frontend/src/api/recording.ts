@@ -35,7 +35,7 @@ export const uploadToS3 = async (url: string, blob: Blob, onProgress?: (p: numbe
     onUploadProgress: (e) => {
       const percent = Math.round((e.loaded * 100) / (e.total ?? 1)); // 何バイト送ったか監視
       onProgress?.(percent);
-    }
+    },
   });
 };
 
