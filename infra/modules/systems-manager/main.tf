@@ -25,9 +25,7 @@ resource "aws_ssm_document" "session_manager_prefs" {
       s3EncryptionEnabled         = true
       kmsKeyId                    = var.kms_key_arn
       shellProfile = {
-        linux = {
-          commands = "export PS1='[SSM Session] \\u@\\h:\\w\\$ '"
-        }
+        linux = "echo '[SSM Session started]'"
       }
     }
   })

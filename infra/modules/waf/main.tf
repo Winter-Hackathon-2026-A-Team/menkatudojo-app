@@ -1,3 +1,13 @@
+#0.0.0.0/0はWAFv2では指定不可
+locals {
+    waf_allowed_ips = [
+      for cidr in var.allowed_ip_ranges :
+      trimspace(cidr)
+      if trimspace(cidr) != "" && trimspace(cidr) != "0.0.0.0/0"
+  ]
+}
+
+
 # Web ACL
 resource "aws_wafv2_web_acl" "main" {
   name        = "${var.project_name}-waf"
@@ -6,34 +16,6 @@ resource "aws_wafv2_web_acl" "main" {
 
   default_action {
     allow {}
-  }
-
-  # 許可するIPアドレスの設定
-  dynamic "rule" {
-    for_each = length(var.allowed_ip_ranges) > 0 ? [1] : []
-    content {
-      name     = "AllowIPSet"
-      #１番最優先
-      priority = 1
-
-      statement {
-        ip_set_reference_statement {
-          arn = aws_wafv2_ip_set.allowed_ips[0].arn
-        }
-      }
-      #指定したIPアドレスからアクセスが来たら許可
-      action {
-        allow {}
-      }
-
-      visibility_config {
-        #何件のアクセスが許可されたか
-        cloudwatch_metrics_enabled = true
-        metric_name                = "AllowIPSet"
-        #詳細をコンソール上で確認
-        sampled_requests_enabled   = true
-      }
-    }
   }
 
   # AWSのセキュリティチームが作成している攻撃パターンの辞書を適用
@@ -144,15 +126,22 @@ resource "aws_wafv2_web_acl" "main" {
 
 # 許可するIPアドレスの設定
 resource "aws_wafv2_ip_set" "allowed_ips" {
-  count       = length(var.allowed_ip_ranges) > 0 ? 1 : 0
+  count       = length(local.waf_allowed_ips) > 0 ? 1 : 0
   name        = "${var.project_name}-allowed-ips"
   description = "Allowed IP addresses"
   scope       = "REGIONAL"
   ip_address_version = "IPV4"
-  addresses         = var.allowed_ip_ranges
+  addresses         = local.waf_allowed_ips
 
   tags = {
     Name = "${var.project_name}-allowed-ips"
+  }
+  lifecycle {
+    # addresses に 0.0.0.0/0 が混入しないよう二重チェック
+    precondition {
+      condition     = !contains(local.waf_allowed_ips, "0.0.0.0/0")
+      error_message = "WAF IP set must not contain 0.0.0.0/0 (use default_action allow instead)."
+    }
   }
 }
 
