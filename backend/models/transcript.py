@@ -1,5 +1,5 @@
 from sqlalchemy import VARCHAR, Integer, DateTime, ForeignKey, text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.mysql import INTEGER, CHAR, SMALLINT, MEDIUMTEXT
 from datetime import datetime
 from database import Base
@@ -38,3 +38,4 @@ class Transcript(Base):
         server_default=func.current_timestamp()
     )
 
+    attempt = relationship("Attempt", back_populates="transcript")

@@ -1,5 +1,5 @@
 from sqlalchemy import String, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.mysql import INTEGER
 
 from database import Base
@@ -36,3 +36,6 @@ class User(Base):
         nullable=False
     )
 
+    attempts = relationship("Attempt", back_populates="user")
+    session = relationship("Session", back_populates="user")
+    questions = relationship("Question", back_populates="user")

@@ -5,9 +5,10 @@ from models.user import User
 from core.exceptions import UserNotFoundError
 from uuid import uuid4
 from sqlalchemy import text, select, func, distinct
-from models.recording import Recording as Answer
+from models.attempt import Attempt as Answer
 from models.question import Question
 from models.category import Category
+from models.feedback import Feedback
 from schemas.dashboard import (
     DashboardResponse, 
     DashboardStats, 
@@ -19,6 +20,8 @@ from schemas.dashboard import (
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.security import hash_password
+from sqlalchemy.orm import selectinload
+
 
 class UserService:
     def __init__(self, db: AsyncSession):
@@ -96,7 +99,7 @@ async def get_dashboard_data(db: AsyncSession, user: User) -> DashboardResponse:
         select(
             func.count(Answer.id).label("totalCount"),
             func.count(distinct(func.date(Answer.created_at))).label("totalDays"),
-            func.sum(Answer.duration_seconds).label("totalDurationSeconds")
+            func.sum(Answer.duration_s).label("totalDurationSeconds")
         )
         .where(Answer.user_id == user.id)
     )
@@ -109,7 +112,7 @@ async def get_dashboard_data(db: AsyncSession, user: User) -> DashboardResponse:
         .options(
             # AnswerからQuestion、さらにCategoryまで一気にロード（N+1問題対策）
             selectinload(Answer.question).selectinload(Question.category),
-            selectinload(Answer.feedback)
+            selectinload(Answer.feedback).selectinload(Feedback.avatar)
         )
         .where(Answer.user_id == user.id)
         .order_by(Answer.created_at.desc())
@@ -127,13 +130,13 @@ async def get_dashboard_data(db: AsyncSession, user: User) -> DashboardResponse:
         ),
         latestAnswers=[
             LatestAnswer(
-                answerId=str(ans.id),
+                answerId=str(ans.public_id),
                 categoryName=ans.question.category.name if ans.question and ans.question.category else "未設定",
                 questionContent=ans.question.question_text if ans.question else "不明な質問",
                 createdAt=ans.created_at,
                 characterConfig=CharacterConfig(
-                    avatarId=ans.avatar_id,
-                    personalityId=ans.personality_id
+                    avatarId=ans.feedback.avatar_id,
+                    personalityId=ans.feedback.avatar.personality_id
                 ),
                 feedback=FeedbackGrade(
                     grade=ans.feedback.grade if ans.feedback else "N/A"

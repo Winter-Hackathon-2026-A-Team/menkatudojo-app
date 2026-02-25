@@ -1,8 +1,8 @@
-"""table再生成
+"""Table再生成
 
-Revision ID: b5aea91720bd
+Revision ID: 47641aedd2cb
 Revises: 
-Create Date: 2026-02-21 20:25:16.278715
+Create Date: 2026-02-25 21:32:57.246518
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
-revision: str = 'b5aea91720bd'
+revision: str = '47641aedd2cb'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

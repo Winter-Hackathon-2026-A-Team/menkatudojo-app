@@ -70,3 +70,5 @@ class Question(Base):
     )
 
     category = relationship("Category", back_populates="questions")
+    user = relationship("User", back_populates="questions")
+    attempts = relationship("Attempt", back_populates="question")

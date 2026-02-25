@@ -1,5 +1,5 @@
 from sqlalchemy import VARCHAR, Integer, DateTime, ForeignKey, Text, func, Enum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.mysql import INTEGER, CHAR, SMALLINT
 from datetime import datetime
 from database import Base
@@ -64,3 +64,6 @@ class Feedback(Base):
         server_default=func.current_timestamp()
     )
 
+
+    attempt = relationship("Attempt", back_populates="feedback")
+    avatar = relationship("Avatar", back_populates="feedbacks")
