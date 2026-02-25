@@ -3,6 +3,7 @@ from models.attempt import Attempt
 from models.recording import Recording
 from models.avatar import Avatar
 from models.feedback import Feedback
+from models.transcript import Transcript
 from datetime import datetime
 from config.settings import settings
 from zoneinfo import ZoneInfo
@@ -16,14 +17,15 @@ async def create_presigned_url(db, s3, user, req):
     recording = await _create_recording_record(db, attempt)
     # フィードバックレコード生成
     feedback = await _create_feedback_record(db, attempt, req)
+    # 
+    transcript = await _create_transcript_record(db, attempt, req)
 
     try:
         presigned_url = s3.generate_presigned_url(
             ClientMethod="put_object",
             Params={
                 "Bucket": settings.S3_BUCKET_NAME,
-                "Key": recording.storage_key,
-                "ContentType": settings.ALLOW_RECORDING_MIME_TYPE,
+                "Key": recording.storage_key
             },
                 ExpiresIn=300,
         )
@@ -59,7 +61,7 @@ async def _create_recording_record(db, attempt):
     now = datetime.now(ZoneInfo(settings.TZ))
     recording = Recording(
         attempt_id=attempt.id,
-        storage_key=f"recordings/{now:%Y}/{now:%m}/{attempt.public_id}/{uuid4()}.webm"
+        storage_key=f"recordings/{now:%Y}/{now:%m}/{attempt.public_id}_{uuid4()}.webm"
     )
 
     db.add(recording)
@@ -72,7 +74,7 @@ async def _create_feedback_record(db, attempt, req):
        attempt_id=attempt.id,
        avatar_id=req.characterConfig.avatarId,
        good_points="",
-       improve_points="",
+       improve_points=""
     )
 
     db.add(feedback)
@@ -80,6 +82,16 @@ async def _create_feedback_record(db, attempt, req):
 
     return feedback
 
+async def _create_transcript_record(db, attempt, req):
+    transcript = Transcript(
+       attempt_id=attempt.id,
+       text=""
+    )
+
+    db.add(transcript)
+    await db.flush()
+
+    return transcript
 
 class RecordingService:
     def __init__(self, db):

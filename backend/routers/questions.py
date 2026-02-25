@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends
-from schemas.questions import questionContentResponse, QuestionCreateRequest
+
 from dependencies.auth import get_current_user
+
+from schemas.question import questionContentResponse
+from schemas.question import QuestionCreateRequest
+from schemas.question import QuestionGetResponse
 from core.security import verify_csrf
 from services import question_service
 from database import get_db
@@ -38,7 +42,7 @@ async def get_question_data(
     
     return await question_service.get_question_data(db, current_user, question_id)
 
-@router.post("", status_code=201, dependencies=[Depends(verify_csrf)])
+@router.post("", status_code=201)
 async def create_question(
     payload: QuestionCreateRequest,
     db: AsyncSession = Depends(get_db),
@@ -47,3 +51,10 @@ async def create_question(
     question = await question_service.create_question(db, current_user, payload)
     return {"message": "Question created", "questionId": question.id}
     
+@router.get("", response_model=QuestionGetResponse)
+async def get_question(
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    
+    return await question_service.get_question(db, current_user)

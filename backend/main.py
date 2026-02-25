@@ -1,9 +1,13 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from routers.auth import router as auth_router
+from middlewares.csrf import CSRFMiddleware
+from fastapi.responses import JSONResponse
+
 
 import os
 import logging
@@ -19,11 +23,14 @@ from routers.questions import router as questions_router
 from routers.categories import router as categories_router
 from routers.attempts import router as attempts_router
 from routers.feedbacks import router as feedbacks_router
+from routers.webhooks import router as webhooks_router
 from services.attempt_service import AttemptService
 from services.recording_service import RecordingService
 from services.transcript_service import TranscriptService
 from services.feedback_service import FeedbackService
 from fastapi.openapi.utils import get_openapi
+from faster_whisper import WhisperModel
+import google.generativeai as genai
 
 def custom_openapi():
     if app.openapi_schema:
@@ -39,7 +46,7 @@ def custom_openapi():
         "CSRF": {
             "type": "apiKey",
             "in": "header",
-            "name": "X-CSRF-Token"
+            "name": "x-xsrf-token"
         }
     }
 
@@ -73,8 +80,21 @@ async def lifespan(app: FastAPI):
             #ヘルスチェック(SELECT 1)で疎通確認
             await conn.execute(text("SELECT 1"))
         logger.info("Database connection successful.")
+
+        # Whisper モデル読み込み
+        app.state.whisper_model = WhisperModel(
+            "base",
+            device="cpu",
+            compute_type="int8"
+        )
+        logger.info("Whisper model loaded.")
+
+        # Gemini
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        app.state.gemini_model = genai.GenerativeModel(settings.GEMINI_MODEL_NAME)
+
     except Exception as e:
-        logger.error(f"Database connection failed: {e}")
+        logger.error(f"startup failed: {e}")
 
     #アプリが終了するまで待機
     yield
@@ -92,11 +112,32 @@ app = FastAPI(
     lifespan=lifespan,
     )
 
-#セッションミドルウェアの設定
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    # detailが辞書かつ'code'キーを持つ場合、フラットな構造で返す
+    if isinstance(exc.detail, dict) and "code" in exc.detail:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=exc.detail,  # {"code": "..."} が直接返る
+        )
+    # それ以外の標準的なHTTPExceptionはそのまま
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
+# セッションミドルウェアを先に追加
 app.add_middleware(
-    #セッション機能を有効
     SessionMiddleware,
-    secret_key=settings.SECRET_KEY,
+    secret_key=settings.SECRET_KEY
+)
+
+# CSRFミドルウェアを追加
+app.add_middleware(
+    CSRFMiddleware,
+    exempt_paths={"/docs", "/openapi.json"},
+    protect_prefixes=("/api",),
 )
 
 #CORS設定
@@ -108,8 +149,9 @@ app.add_middleware(
     #GET,POST等のHTTPメソッド許可
     allow_methods=["*"],
     #HTTPヘッダーのカスタムヘッダーを許可。フロントで自由に設定できるように*としてますが、本番環境に上げる時は要相談。
-    allow_headers=["*"],
+    allow_headers=["*", "x-xsrf-token"],
 )
+
 
 
 #認証ルーターを登録
@@ -119,6 +161,7 @@ app.include_router(questions_router)
 app.include_router(categories_router)
 app.include_router(attempts_router)
 app.include_router(feedbacks_router)
+app.include_router(webhooks_router)
 
 # Swagger UI設定
 app.openapi = custom_openapi

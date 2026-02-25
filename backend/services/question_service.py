@@ -1,9 +1,11 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import selectinload
 from models.question import Question
+from models.category import Category
 from config.settings import settings
 from core.exceptions import QuestionNotFoundError, ForbiddenError
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
+from schemas.question import QuestionGetResponse, QuestionItem
 
 
 async def get_question_data(db, user, question_id):
@@ -82,3 +84,34 @@ async def create_question(db, user, payload):
 
     return question
 
+
+async def get_question(db, user):
+
+    stmt = (
+        select(
+            Question.id,
+            Category.name,
+            Question.question_text,
+            Question.source,
+            Question.sort_order,
+        )
+        .join(Category, Category.id == Question.category_id)
+        .where(or_(Question.owner_user_id == user.id, Question.source == 'system'))
+    )
+
+    result = await db.execute(stmt)
+    rows = result.mappings().all()
+
+    return QuestionGetResponse(
+        questions=[
+            QuestionItem(
+                questionId=row["id"],
+                categoryName=row["name"],
+                questionContent=row["question_text"],
+                source=row["source"],
+                sortOrder=row["sort_order"],
+                durationLimitSeconds=settings.MAX_RECORDING_DURATION_S,
+            )
+            for row in rows
+        ]
+    )

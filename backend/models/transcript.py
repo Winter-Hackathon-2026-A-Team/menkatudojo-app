@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import ForeignKey, DateTime
+from sqlalchemy import ForeignKey, DateTime, func
 from sqlalchemy.sql import text as sql_text
 from sqlalchemy.dialects.mysql import INTEGER, MEDIUMTEXT
 from database import Base
-
+from datetime import datetime
 
 class Transcript(Base):
     __tablename__ = "transcripts"
@@ -26,8 +26,15 @@ class Transcript(Base):
         MEDIUMTEXT, 
         nullable=False
     )
-    created_at: Mapped[str] = mapped_column(
-        DateTime, 
-        nullable=False, 
-        server_default=sql_text("CURRENT_TIMESTAMP")
+    
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        server_default=func.current_timestamp()
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        server_default=func.current_timestamp()
     )

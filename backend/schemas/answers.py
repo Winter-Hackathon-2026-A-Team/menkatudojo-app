@@ -12,3 +12,7 @@ class PreUploadResponse(BaseModel):
     answerId: str
     uploadUrl: str
     storageKey: str 
+
+
+class FeedbackGenerateRequest(BaseModel):
+    voiceStorageKey: str

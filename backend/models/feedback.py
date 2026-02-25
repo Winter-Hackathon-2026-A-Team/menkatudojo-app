@@ -1,14 +1,14 @@
-from sqlalchemy import VARCHAR, Integer, DateTime, ForeignKey, Text, func
+from sqlalchemy import VARCHAR, Integer, DateTime, ForeignKey, Text, func, Enum
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.mysql import INTEGER, CHAR, SMALLINT
 from datetime import datetime
 from database import Base
 import enum
 
-class FeedbackGrade(str, enum.Enum):
-    A = "A"
-    B = "B"
-    C = "C"
+# class FeedbackGrade(str, enum.Enum):
+#     A = "A"
+#     B = "B"
+#     C = "C"
 
 
 class Feedback(Base):
@@ -48,6 +48,11 @@ class Feedback(Base):
         nullable=True
     )
 
+    grade: Mapped[str] = mapped_column(
+        Enum("A", "B", "C"),
+        nullable=True
+    )
+
     model_name: Mapped[str] = mapped_column(
         VARCHAR(100),
         nullable=True
@@ -64,4 +69,5 @@ class Feedback(Base):
         nullable=False,
         server_default=func.current_timestamp()
     )
+
 
