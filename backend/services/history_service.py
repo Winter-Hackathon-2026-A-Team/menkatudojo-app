@@ -104,6 +104,7 @@ async def get_history_detail(db, user, s3, answer_id):
     stmt = (
         select(
             Attempt.public_id.label("public_id"),
+            Attempt.status,
             Category.name,
             Question.question_text,
             Attempt.created_at,
@@ -146,6 +147,7 @@ async def get_history_detail(db, user, s3, answer_id):
 
     return {
         "answerId": row["public_id"],
+        "analysisStatus": row["status"],
         "categoryName": row["name"],
         "questionContent": row["question_text"],
         "createdAt": row["created_at"],

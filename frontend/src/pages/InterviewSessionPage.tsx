@@ -1,4 +1,4 @@
-// TODO: onCloseをモーダル展開→確認後に終了に変更する
+import { ErrorView } from '@/components/common/ErrorView';
 import { AnalysisOverlay } from '@/components/features/recording/AnalysisOverlay';
 import { RecordingControls } from '@/components/features/recording/RecordingControls';
 import { RecordingHeader } from '@/components/features/recording/RecordingHeader';
@@ -9,22 +9,32 @@ import { useMediaStream } from '@/hooks/useMediaStream';
 import { useQuestion } from '@/hooks/useQuestion';
 import { useRecording } from '@/hooks/useRecording';
 import { useUploadAnswer } from '@/hooks/useUploadAnswer';
-import { FeedbackData } from '@/types/recording';
-import { Box } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { AnalysisResponse } from '@/types/recording';
+import { getErrorMessage } from '@/utils/errorHandlers';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 export const InterviewSessionPage = () => {
   const { questionId } = useParams();
   const navigate = useNavigate();
   const { videoRef, mediaState, setupDevices } = useMediaStream();
+  const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  // 1. マウント時にlocalStorageから設定を復元
+  // 1. 設定の復元（アバター・性格）
   const [characterConfig] = useState(() => {
     const saved = localStorage.getItem('selectedAvatarId');
     const avatarId = saved ? Number(saved) : PERSONALITIES[0].avatarId;
-
-    // 定数から該当する師範(Personality)を特定
     const personality = PERSONALITIES.find((p) => p.avatarId === avatarId) || PERSONALITIES[0];
 
     return {
@@ -33,14 +43,16 @@ export const InterviewSessionPage = () => {
     };
   });
 
-  // 質問内容・録画可能時間を取得
-  const { data: question, isLoading: isQuestionLoading, isError } = useQuestion(questionId);
-  // デバッグ用
-  if (isError) {
-    console.log('質問内容取得に失敗');
-    return null;
-  }
+  // 2. 質問データの取得
+  const {
+    data: question,
+    isLoading: isQuestionLoading,
+    isError: isQuestionError,
+    error: questionError,
+    refetch: refetchQuestion,
+  } = useQuestion(questionId);
 
+  // 3. 録画状態管理
   const {
     state,
     setReady,
@@ -51,53 +63,61 @@ export const InterviewSessionPage = () => {
     setState,
   } = useRecording();
 
+  // 4. 解析・アップロード管理
   const { startUploadAndAnalysis, progress, cancelAll } = useUploadAnswer();
 
-  // 面接官の選択
+  // 5. 面接官の固定
   const [interviewer] = useState(
     () => INTERVIEWERS[Math.floor(Math.random() * INTERVIEWERS.length)],
   );
 
-  useEffect(() => {
-    if (state.phase !== 'initializing' || !question) return;
-
-    let isMounted = true; // クリーンアップ用
-
-    const initCamera = async () => {
+  // カメラ・マイクの初期化ロジック
+  const initCamera = useCallback(async () => {
+    if (!question) return;
+    try {
       const stream = await setupDevices();
-      if (stream && isMounted) {
-        // 1. streamをセットし、録画機能を有効にする
+      if (stream) {
         setReady(question, {
           ...mediaState,
           stream,
-          videoStatus: mediaState.videoStatus,
-          audioStatus: mediaState.audioStatus,
-          audioLevel: 0,
-          error: null,
+          videoStatus: 'ready',
+          audioStatus: 'ready',
         });
       }
-    };
+    } catch (err) {
+      console.error('Device setup failed:', err);
+    }
+  }, [question, setupDevices, setReady, mediaState]);
 
-    initCamera();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [question, state.phase]);
-
-  // アンマウント時にポーリングを停止
+  // mount時・question取得時の初期化
   useEffect(() => {
-    return () => cancelAll();
-  }, [cancelAll]);
+    if (state.phase === 'initializing' && question) {
+      initCamera();
+    }
+  }, [state.phase, question, initCamera]);
 
-  // 確定ボタン
+  // 6. ハンドラー定義
+  const handleCloseRequest = () => {
+    // 録画中、または録画完了（未保存）の状態なら警告を出す
+    if (state.phase === 'recording' || state.phase === 'completed') {
+      setIsExitConfirmOpen(true);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const handleConfirmExit = () => {
+    cancelAll();
+    navigate(-1);
+  };
+
   const handleConfirm = async () => {
     if (state.phase !== 'completed') return;
 
     await startUploadAndAnalysis(
       state.videoBlob,
-      state.question.questionId,
-      characterConfig.avatarId, // 取得したIDを注入
+      Number(state.question.questionId),
+      characterConfig.avatarId,
       characterConfig.personalityId,
       (phase, details) => {
         setState((prev) => ({
@@ -106,14 +126,53 @@ export const InterviewSessionPage = () => {
           ...(details || {}),
         }));
       },
-      (feedback: FeedbackData) => {
-        // 成功時：結果画面へ（履歴に残さないようreplace）
-        console.log('分析結果:', feedback);
-        navigate('/analysis-result', { state: { feedback }, replace: true });
+      (response: AnalysisResponse) => {
+        queryClient.setQueryData(['analysisResult', response.answerId], response);
+        navigate(`/analysis-result/${response.answerId}`, { replace: true });
       },
     );
   };
 
+  // 7. 早期リターンによるエラーハンドリング
+
+  // A. APIからの質問取得エラー
+  if (isQuestionError) {
+    return (
+      <Box
+        sx={{
+          bgcolor: '#121212',
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <ErrorView message={getErrorMessage(questionError)} onRetry={() => refetchQuestion()} />
+      </Box>
+    );
+  }
+
+  // B. 録画プロセス中のエラー（デバイス切断、レコーダー失敗など）
+  if (state.phase === 'error') {
+    return (
+      <Box
+        sx={{
+          bgcolor: '#121212',
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <ErrorView
+          message={state.error.message}
+          onRetry={state.error.severity === 'recoverable' ? resetRecording : undefined}
+        />
+      </Box>
+    );
+  }
+
+  // 8. メインレンダリング
   return (
     <Box
       sx={{
@@ -122,10 +181,36 @@ export const InterviewSessionPage = () => {
         color: 'white',
         display: 'flex',
         flexDirection: 'column',
+        overflow: 'hidden',
       }}
     >
-      <RecordingHeader state={state} isLoading={isQuestionLoading} onClose={() => navigate(-1)} />{' '}
-      {/* TODO: モーダル展開させる */}
+      <RecordingHeader state={state} isLoading={isQuestionLoading} onClose={handleCloseRequest} />
+
+      {/* 終了確認モーダル */}
+      <Dialog
+        open={isExitConfirmOpen}
+        onClose={() => setIsExitConfirmOpen(false)}
+        slotProps={{
+          paper: { sx: { bgcolor: '#222', color: 'white', p: 1, backgroundImage: 'none' } },
+        }}
+      >
+        <DialogTitle>練習を終了しますか？</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: 'rgba(255,255,255,0.7)' }}>
+            録画データは保存されません。本当に終了しますか？
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setIsExitConfirmOpen(false)} sx={{ color: 'white' }}>
+            キャンセル
+          </Button>
+          <Button onClick={handleConfirmExit} variant="contained" color="error">
+            終了する
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ビデオ・面接官表示エリア */}
       <Box
         sx={{
           flexGrow: 1,
@@ -144,6 +229,8 @@ export const InterviewSessionPage = () => {
           isQuestionLoading={isQuestionLoading}
         />
       </Box>
+
+      {/* 録画コントロール・操作エリア */}
       <Box sx={{ flexShrink: 0, pb: 4 }}>
         <RecordingControls
           state={state}
@@ -154,6 +241,8 @@ export const InterviewSessionPage = () => {
           uploadProgress={progress}
         />
       </Box>
+
+      {/* 解析中オーバーレイ */}
       <AnalysisOverlay
         open={state.phase === 'uploading' || state.phase === 'analyzing'}
         phase={state.phase}

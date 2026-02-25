@@ -46,9 +46,10 @@ class HistoryListResponse(BaseModel):
 
 class HistoryDetailResponse(BaseModel):
     answerId: str
+    analysisStatus: str = "completed"
     categoryName: str
     questionContent: str
     createdAt: datetime
     characterConfig: CharacterConfig
-    transcript: str
-    feedback: FeedbackAll
+    transcript: str | None = None
+    feedback: FeedbackAll | None = None

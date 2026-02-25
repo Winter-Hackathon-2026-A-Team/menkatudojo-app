@@ -1,6 +1,7 @@
 import { authApi } from '@/api/auth';
-import { LoadingView } from '@/components/common/LoadingView';
+import { ErrorView } from '@/components/common/ErrorView';
 import { AuthState } from '@/types/auth';
+import { useQueryClient } from '@tanstack/react-query';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface AuthContextType extends AuthState {
@@ -13,6 +14,7 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const queryClient = useQueryClient();
   const [state, setState] = useState<AuthState>({
     status: 'initializing',
     user: null,
@@ -53,15 +55,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     try {
       await authApi.logout();
+    } catch (error) {
+      console.error('Logout API failed:', error);
     } finally {
+      document.cookie = 'csrf_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+
+      queryClient.clear();
+      // 4. Stateを更新して画面を「未認証」に切り替える
       setState({ status: 'unAuthenticated', user: null });
     }
   };
 
   return (
     <AuthContext.Provider value={{ ...state, login, signup, logout, initializeAuth }}>
-      {/* statusがinitializingならLoadingを返し、それ以外でchildrenを返す */}
-      {state.status === 'initializing' ? <LoadingView /> : children}
+      {state.status === 'error' ? (
+        <ErrorView message="認証情報の取得に失敗しました。" onRetry={initializeAuth} />
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };
