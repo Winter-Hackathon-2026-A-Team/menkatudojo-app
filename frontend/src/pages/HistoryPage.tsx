@@ -1,4 +1,6 @@
+import { EmptyContentView } from '@/components/common/EmptyContentView';
 import { LoadingView } from '@/components/common/LoadingView';
+import { PageErrorHandler } from '@/components/common/PageErrorHandler';
 import { HistoryCard } from '@/components/features/history/HistoryCard';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -14,20 +16,26 @@ export const HistoryPage = () => {
   const navigate = useNavigate();
 
   // TanStack Queryから必要な状態を取り出す
-  const { data, isLoading, isError, error, isPlaceholderData } = useHistory(page);
+  const { data, isLoading, error, refetch, isPlaceholderData } = useHistory(page);
 
   // 初回（キャッシュもなく、何も表示するものがない時）のみLoadingViewを出す
   if (isLoading) return <LoadingView />;
 
   // エラーハンドリング
-  if (isError || !data) {
+  // 2. エラーハンドリング（交通整理）
+  if (error) {
+    return <PageErrorHandler error={error} onRetry={refetch} />;
+  }
+
+  // 3. データが空の場合の表示（正常系だが中身なし）
+  if (!data || data.answers.length === 0) {
     return (
-      <Box p={4} textAlign="center">
-        <Typography color="error" gutterBottom>
-          データの取得に失敗しました：{error?.message}
-        </Typography>
-        <Button onClick={() => window.location.reload()}>再試行</Button>
-      </Box>
+      <EmptyContentView
+        title="履歴がありません"
+        message="まだ練習の記録がありません。まずは最初の練習を始めてみましょう！"
+        actionText="練習を始める"
+        onRetry={() => navigate('/questions')}
+      />
     );
   }
 

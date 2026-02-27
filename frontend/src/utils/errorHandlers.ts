@@ -1,6 +1,7 @@
 // エラーオブジェクトをユーザー向けの言葉に変換する役割
 import axios from 'axios';
 
+// ユーザーーへ出力するメッセージの翻訳
 export const getErrorMessage = (error: unknown): string => {
   // 型安全性の担保：unknown型で受け取り、axiosのエラーかチェックする
   if (!axios.isAxiosError(error)) return '予期せぬエラーが発生しました。';
@@ -35,4 +36,13 @@ export const getErrorMessage = (error: unknown): string => {
       if (status === 404) return 'ページが見つかりませんでした。';
       return 'データの取得に失敗しました。';
   }
+};
+
+// 振り分けをする
+// 今後axiosから他へ移行する場合はここを修正すると全体のエラー系処理が完了する。
+export const getErrorStatus = (error: unknown): number => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.status || 0;
+  }
+  return 0; // axiosエラーでない、またはレスポンスがない場合は0を返す
 };

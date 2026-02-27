@@ -23,6 +23,14 @@ export const AuthorityCheckPage = () => {
   const { showMessage } = useMessage(); // globalMessageの関数を取得
   const hasNotifiedRef = useRef(false); // メッセージ出力が多重発火しないようにフラグを作る
 
+  // パラメータに不正な値が入力された時
+  useEffect(() => {
+    if (!questionId || isNaN(Number(questionId))) {
+      showMessage('不正なアクセスです。質問を選択し直してください。', 'error');
+      navigate('/questions');
+    }
+  }, [questionId, navigate, showMessage]);
+
   // カメラ・マイクの準備が完了している状態を定義
   const isReady = mediaState.videoStatus === 'ready' && mediaState.audioStatus === 'ready';
   // 準備完了したら録画画面へ遷移

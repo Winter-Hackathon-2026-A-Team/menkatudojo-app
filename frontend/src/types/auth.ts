@@ -14,6 +14,7 @@ export interface User {
 export interface AuthState {
   status: AuthStatus;
   user: User | null;
+  errorMessage?: string;
 }
 
 // APIレスポンス(initializeAuth)・success
