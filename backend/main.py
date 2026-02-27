@@ -28,6 +28,7 @@ from services.attempt_service import AttemptService
 from services.recording_service import RecordingService
 from services.transcript_service import TranscriptService
 from services.feedback_service import FeedbackService
+from routers.users import router as user_router
 from fastapi.openapi.utils import get_openapi
 from faster_whisper import WhisperModel
 import google.generativeai as genai
@@ -162,6 +163,7 @@ app.include_router(categories_router)
 app.include_router(attempts_router)
 app.include_router(feedbacks_router)
 app.include_router(webhooks_router)
+app.include_router(user_router)
 
 # Swagger UI設定
 app.openapi = custom_openapi

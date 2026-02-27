@@ -1,6 +1,7 @@
+
 from __future__ import annotations
 
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, DateTime, func
 from sqlalchemy.sql import text as sql_text
 from sqlalchemy.dialects.mysql import INTEGER, MEDIUMTEXT
@@ -38,3 +39,6 @@ class Transcript(Base):
         nullable=False,
         server_default=func.current_timestamp()
     )
+
+    attempt = relationship("Attempt", back_populates="transcript")
+

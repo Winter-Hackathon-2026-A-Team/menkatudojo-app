@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, Request
-from schemas.answers import PreUploadRequest, PreUploadResponse, FeedbackGenerateRequest
+from fastapi import APIRouter, Depends, Query
+from schemas.answers import PreUploadRequest, PreUploadResponse, HistoryListResponse, HistoryDetailResponse
+
 from routers.dependencies import get_current_user
 from core.security import verify_csrf
-from services import recording_service
+from services import recording_service, history_service
 from database import get_db
 from core.s3_client import get_s3_client
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,3 +40,24 @@ async def get_feedback(
     return await feedback_service.get_feedback(db, s3, user, attempt_public_id)
 
 
+# 履歴一覧
+@router.get("", response_model=HistoryListResponse)
+async def get_history_list(
+    page: int = Query(1, ge=1),
+    limit: int = Query(6, ge=6, le=6),
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    
+    return await history_service.get_history_list(db, current_user, page, limit)
+    
+
+@router.get("/{answer_id}", response_model=HistoryDetailResponse)
+async def get_history_detail(
+    answer_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user),
+    s3 = Depends(get_s3_client)
+):
+    
+    return await history_service.get_history_detail(db, current_user, s3, answer_id)

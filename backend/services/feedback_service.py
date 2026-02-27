@@ -11,6 +11,8 @@ from models.question import Question
 import tempfile
 import boto3
 from botocore.client import Config
+import subprocess
+import re
 
 class FeedbackService:
     def __init__(self, db: AsyncSession):
@@ -216,6 +218,18 @@ async def get_feedback(db, s3, user, attempt_public_id):
 
     }
 
+def get_duration(input_path: str) -> float:
+    cmd = [
+        "ffprobe",
+        "-v", "error",
+        "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        input_path
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    return float(result.stdout.strip())
+
 async def generate_feedback(db, s3, attempt_public_id, request, req):
 
     # 開発用
@@ -241,6 +255,7 @@ async def generate_feedback(db, s3, attempt_public_id, request, req):
 
         transcript_text = "".join([segment.text for segment in segments])
 
+        duration_s = get_duration(tmp.name)
 
     # アバター情報と、質問文取得
     stmt = (
@@ -257,81 +272,87 @@ async def generate_feedback(db, s3, attempt_public_id, request, req):
     question_text = row.question_text
 
     # 開発用（Gemini無料枠超過回避）
-    not_ai_flg = True
+    # not_ai_flg = False
 
-    if not_ai_flg:
-        from types import SimpleNamespace
+    # if not_ai_flg:
+    #     from types import SimpleNamespace
 
-        good_points_res = SimpleNamespace()
-        improve_points_res = SimpleNamespace()
-        next_tip_res = SimpleNamespace()
-        grade_res = SimpleNamespace()
+    #     good_points_res = SimpleNamespace()
+    #     improve_points_res = SimpleNamespace()
+    #     next_tip_res = SimpleNamespace()
+    #     grade_res = SimpleNamespace()
 
-        good_points_res.text = "テストテキスト"
-        improve_points_res.text = "テストテキスト"
-        next_tip_res.text = "テストテキスト"
-        grade_res.text = "テストテキスト"
+    #     good_points_res.text = "テストテキスト"
+    #     improve_points_res.text = "テストテキスト"
+    #     next_tip_res.text = "テストテキスト"
+    #     grade_res.text = "A"
 
-    else:
+    # else:
 
-        # AIの共通プロンプト
-        gemini_prompt_prefix = f"""
-            質問: {question_text}
+    # AIの共通プロンプト
+    gemini_prompt_prefix = f"""
+        質問: {question_text}
 
-            回答: {transcript_text}
+        回答: {transcript_text}
 
-            文章のテイスト: {avatar_description} 
+        文章のテイスト: {avatar_description} 
 
-            上記の質問に対する回答を、文章のテイストに沿って、下記観点で評価してください。
-            観点以外のことは生成しないでください。
-            """
+        上記の質問に対する回答を、文章のテイストに沿って、下記観点で評価してください。
+        観点以外のことは生成しないでください。
+        評価は、200文字以内にしてください。
+        """
 
-        # AIモデル取得
-        gemini_model = request.app.state.gemini_model
+    # AIモデル取得
+    gemini_model = request.app.state.gemini_model
 
-        # AIからフィードバック取得
-        good_points_res = gemini_model.generate_content(
-            f"""
-            {gemini_prompt_prefix}
+    # AIからフィードバック取得
+    good_points_res = gemini_model.generate_content(
+        f"""
+        {gemini_prompt_prefix}
 
-            観点: 良いところ
-            """
-        )
+        観点: 良いところ
+        """
+    )
 
-        improve_points_res = gemini_model.generate_content(
-            f"""
-            {gemini_prompt_prefix}
+    improve_points_res = gemini_model.generate_content(
+        f"""
+        {gemini_prompt_prefix}
 
-            観点: 改善点
-            """
-        )
+        観点: 改善点
+        """
+    )
 
-        next_tip_res = gemini_model.generate_content(
-            f"""
-            {gemini_prompt_prefix}
+    next_tip_res = gemini_model.generate_content(
+        f"""
+        {gemini_prompt_prefix}
 
-            観点:ワンポイントアドバイス
-            """
-        )
+        観点:ワンポイントアドバイス
+        """
+    )
 
-        grade_res = gemini_model.generate_content(
-            f"""
-            {gemini_prompt_prefix}
-            
-            観点:総評（A, B, C）で評価してください。Aが一番よく、Cが最も悪いとします。
-                A, B, C以外の文字は返さないでください。
-            """
-        )
+    grade_res = gemini_model.generate_content(
+        f"""
+        {gemini_prompt_prefix}
+        
+        観点:総評（A, B, C）で評価してください。Aが一番よく、Cが最も悪いとします。
+            A, B, C以外の文字は返さないでください。
+        """
+    )
+
+    raw_grade = grade_res.text.strip()
+
+    match = re.search(r"[ABC]", raw_grade)
+    grade = match.group(0) if match else "A"
 
     # AIフィードバック結果をDBに反映
-    await _update_feedback_record(db, attempt_public_id, good_points_res.text, improve_points_res.text, next_tip_res.text)
-    await _update_attempt_record(db, attempt_public_id)
+    await _update_feedback_record(db, attempt_public_id, good_points_res.text, improve_points_res.text, next_tip_res.text, grade_res.text)
+    await _update_attempt_record(db, attempt_public_id, duration_s)
     await _update_transcript_record(db, attempt_public_id, transcript_text)
     await db.commit()
 
     
 
-async def _update_feedback_record(db, attempt_public_id, good_points, improve_points, next_tip):
+async def _update_feedback_record(db, attempt_public_id, good_points, improve_points, next_tip, grade):
     
     # ① attempt を取得
     result = await db.execute(
@@ -348,17 +369,19 @@ async def _update_feedback_record(db, attempt_public_id, good_points, improve_po
             good_points=good_points,
             improve_points=improve_points,
             next_tip=next_tip,
+            grade=grade
         )
     )
 
     await db.execute(stmt)
     
-async def _update_attempt_record(db, attempt_public_id):
+async def _update_attempt_record(db, attempt_public_id, duration_s):
     stmt = (
         update(Attempt)
         .where(Attempt.public_id == attempt_public_id)
         .values(
-            status='completed'
+            status='completed',
+            duration_s=duration_s
         )
     )
 

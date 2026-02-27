@@ -62,3 +62,9 @@ variable "kms_key_arn" {
   description = "KMSキーARN"
   type        = string
 }
+
+variable "lambda_layer_arn" {
+  description = "Lambda レイヤー ARN（未指定または空の場合はレイヤーなし。）"
+  type        = string
+  default     = ""
+}

@@ -7,6 +7,7 @@ export type AuthStatus = 'initializing' | 'authenticated' | 'unAuthenticated' | 
 export interface User {
   userId: string;
   username: string;
+  email: string;
 }
 
 // globalState: 認証状態＋userの情報の有無
@@ -38,4 +39,17 @@ export interface ApiErrorResponse {
     field: string;
     reason: string;
   }[];
+}
+
+
+export interface UpdateProfileRequest {
+  username: string;
+  email: string;
+  password?: string;
+}
+
+export interface UpdatePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }

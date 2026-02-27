@@ -1,7 +1,9 @@
+
 from __future__ import annotations
 import enum
 from sqlalchemy import VARCHAR, Integer, DateTime, ForeignKey, text, func, Enum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from sqlalchemy.dialects.mysql import INTEGER, CHAR, SMALLINT
 from datetime import datetime
 from database import Base
@@ -80,3 +82,10 @@ class Attempt(Base):
         server_default=func.current_timestamp()
     )
 
+
+    
+    question = relationship("Question", back_populates="attempts")
+    feedback = relationship("Feedback", back_populates="attempt", uselist=False)
+    transcript = relationship("Transcript", back_populates="attempt")
+    user = relationship("User", back_populates="attempts")
+    recording = relationship("Recording", back_populates="attempt")

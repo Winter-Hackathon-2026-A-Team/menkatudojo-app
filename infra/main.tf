@@ -129,20 +129,24 @@ module "route53" {
   alb_zone_id          = module.alb.alb_zone_id
   #ACMからCNAMEレコードをDNSに登録
   certificate_domain_validation_options = module.alb.certificate_domain_validation_options
+}
 
-  depends_on = [module.alb]
+# ACM 証明書の検証完了待ち（Route53 の検証レコード作成後に実行し、タイムアウトを延長）
+resource "aws_acm_certificate_validation" "main" {
+  certificate_arn = module.alb.certificate_arn
+  depends_on      = [module.route53]
+
+  timeouts {
+    create = "25m"
+  }
 }
 
 # WAF
 module "waf" {
   source = "./modules/waf"
-
-  project_name    = var.project_name
-  #WAFとALBのARNを渡す
-  alb_arn         = module.alb.alb_arn
-  allowed_ip_ranges = var.allowed_cidr_blocks
-  #直近5分のユーザ→ALBのリクエスト上限
-  rate_limit      = 1000
+  project_name = var.project_name
+  alb_arn      = module.alb.alb_arn
+  rate_limit   = 1000
 }
 
 # VPC Endpoints

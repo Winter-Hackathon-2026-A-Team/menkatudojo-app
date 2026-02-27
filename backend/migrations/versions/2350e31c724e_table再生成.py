@@ -1,8 +1,8 @@
 """Table再生成
 
-Revision ID: 9429fa6f51df
+Revision ID: 2350e31c724e
 Revises: 
-Create Date: 2026-02-23 20:05:11.819572
+Create Date: 2026-02-25 22:54:56.292029
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
-revision: str = '9429fa6f51df'
+revision: str = '2350e31c724e'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -139,6 +139,7 @@ def upgrade() -> None:
     sa.UniqueConstraint('attempt_id')
     )
 
+    # テストデータ
     op.execute("""
         INSERT INTO categories (id, name)
         VALUES
@@ -172,29 +173,29 @@ def upgrade() -> None:
     op.execute("""
         INSERT INTO attempts (id, public_id, user_id, question_id, status)
         VALUES
-        (1, '3bc497e5-c2c2-40f8-841a-d1642c029ab8', 1, 2, 'complete'),
-        (2, '15785f1c-d7f5-446b-a3a1-189a5702ff87', 1, 1, 'processing');
+        (1, '3bc497e5-c2c2-40f8-841a-d1642c029ab9', 1, 2, 'completed'),
+        (2, '15785f1c-d7f5-446b-a3a1-189a5702ff89', 1, 1, 'completed')
     """)
 
     op.execute("""
         INSERT INTO recordings (id, attempt_id, storage_key)
         VALUES
-        (1, 1, 'video/2024/01/73d6f01f-6cf4-4a51-92ed-6f4e2367721f.webm'),
-        (2, 2, 'video/2024/01/475ed87a-22f4-45d3-8efb-c1e19dff461e.webm');
+        (1, 1, 'video/2024/01/73d6f01f-6cf4-4a51-92ed-6f4e2367721f'),
+        (2, 2, 'video/2024/01/475ed87a-22f4-45d3-8efb-c1e19dff461e')
     """)
 
     op.execute("""
         INSERT INTO feedbacks (id, attempt_id, avatar_id, good_points, improve_points, next_tip, grade)
         VALUES
         (1, 1, 1, 'ハキハキ喋れてます！', '志望動機が他社でも成立するないようになってしまっています。', '志望がその企業ではなければダメだとわかる内容にしましょう！', 'B'),
-        (2, 2, 3, '基本的に大きな問題はありません。', 'もう少し定量的な表現を入れるとgoodです。', '定量的な表現にしましょう。', 'A');
+        (2, 2, 3, '基本的に大きな問題はありません。', 'もう少し定量的な表現を入れるとgoodです。', '定量的な表現にしましょう。', 'A')
     """)
 
     op.execute("""
         INSERT INTO transcripts (id, attempt_id, text)
         VALUES
         (1, 1, '私が御社を志望した理由は...'),
-        (2, 2, '私は新卒で...');
+        (2, 2, '私は新卒で...')
     """)
 
     # ### end Alembic commands ###
@@ -214,4 +215,45 @@ def downgrade() -> None:
     op.drop_table('users')
     op.drop_table('categories')
     op.drop_table('avatars')
+
+    #　テストデータ削除
+    op.execute("""
+        DELETE FROM categories
+        WHERE id IN (1, 2)
+    """)
+    
+    op.execute("""
+        DELETE FROM questions
+        WHERE id IN (1, 2, 3)
+    """)
+
+    op.execute("""
+        DELETE FROM avatars
+        WHERE id IN (1, 2, 3)
+    """)
+
+    op.execute("""
+        DELETE FROM users
+        WHERE id IN (1)
+    """)
+
+    op.execute("""
+        DELETE FROM attempts
+        WHERE id IN (1, 2)
+    """)
+
+    op.execute("""
+        DELETE FROM recordings
+        WHERE id IN (1, 2)
+    """)
+
+    op.execute("""
+        DELETE FROM feedbacks
+        WHERE id IN (1, 2)
+    """)
+
+    op.execute("""
+        DELETE FROM transcripts
+        WHERE id IN (1, 2)
+    """)
     # ### end Alembic commands ###

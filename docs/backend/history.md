@@ -14,6 +14,9 @@ GET
 ### 出力
 ```
 {
+"answers": 
+[
+{
 "answerId": integer,
 ”categoryName”: string,
 ”questionContent”: string,
@@ -22,9 +25,9 @@ GET
     "avatarId": integer,
     "personalityId": integer
   },
-”feedback”:{
-"grade": str,
+”feedback”:{"grade": str,}
 }
+]
 "meta": {
 "totalCount": integer,
 ”totalPages”: integer,

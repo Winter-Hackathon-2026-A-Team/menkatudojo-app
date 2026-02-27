@@ -74,7 +74,9 @@ async def _create_feedback_record(db, attempt, req):
        attempt_id=attempt.id,
        avatar_id=req.characterConfig.avatarId,
        good_points="",
-       improve_points=""
+       improve_points="",
+       grade="A"
+
     )
 
     db.add(feedback)

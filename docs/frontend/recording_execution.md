@@ -27,8 +27,6 @@
 - globalMessage: { type: 'error'|'success'|'info', message: string } | null
   - 全画面のメッセージ表示を管理
 
-- analysisResult: feedbackオブジェクト
-  - 解析完了後に取得するデータ
 
 #### ローカル状態
 

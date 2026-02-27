@@ -1,70 +1,11 @@
-// import { Question } from '@/types/question';
-// import { AnalysisResponse, PreUploadRequest, PreUploadResponse } from '@/types/recording';
-// import axios from 'axios';
-
-// // 質問内容・録画可能時間の取得
-// export const fetchQuestion = async (id: number): Promise<Question> => {
-//   await new Promise((r) => setTimeout(r, 500));
-//   return {
-//     questionId: 1,
-//     categoryName: 'モック',
-//     questionContent:
-//       'api/recording.tsの開発用モックの質問。本番では選択した質問IDのContentが表示される。',
-//     source: 'system',
-//     sortOrder: 1,
-//     durationLimitSeconds: 90,
-//   };
-// };
-
-// // 署名つきURLの取得
-// export const getPresignedUrl = async (_: PreUploadRequest): Promise<PreUploadResponse> => {
-//   await new Promise((r) => setTimeout(r, 500));
-
-//   const fileName = `test-video-${Date.now()}.webm`;
-
-//   return {
-//     answerId: 'mock-id-123',
-//     uploadUrl: `http://localhost:9000/my-app-bucket/${fileName}`,
-//     storageKey: `mock/path/${fileName}`,
-//   };
-// };
-
-// // MinIOへのアップロード
-// export const uploadToS3 = async (url: string, blob: Blob, onProgress?: (p: number) => void) => {
-//   await axios.put(url, blob, {
-//     headers: { 'Content-Type': blob.type },
-//     onUploadProgress: (e) => {
-//       const percent = Math.round((e.loaded * 100) / (e.total ?? 1));
-//       onProgress?.(percent);
-//     },
-//   });
-// };
-
-// // 分析結果の確認
-// export const checkAnalysisStatus = async (id: string): Promise<AnalysisResponse> => {
-//   await new Promise((r) => setTimeout(r, 1500));
-//   return {
-//     answerId: id,
-//     analysisStatus: 'completed',
-//     characterConfig: {
-//       avatarId: 1,
-//       personalityId: 1,
-//     },
-//     feedback: {
-//       score: 'A',
-//       goodPoints: 'モックデータ:良い点',
-//       improvePoints: 'モックデータ: 改善点',
-//       nextTip: 'モックデータ: アドバイス',
-//       videoUrl: '#',
-//       storageKey: 'mock-key',
-//     },
-//   };
-// };
-
-
 import client from '@/api/client';
-import { PreUploadRequest, PreUploadResponse, AnalysisResponse } from '@/types/recording';
 import { Question } from '@/types/question';
+import {
+  AnalysisResponse,
+  HistoryResponse,
+  PreUploadRequest,
+  PreUploadResponse,
+} from '@/types/recording';
 import axios from 'axios';
 
 /**
@@ -84,15 +25,17 @@ export const getPresignedUrl = async (params: PreUploadRequest): Promise<PreUplo
 };
 
 /**
- * S3/MinIOへのアップロード
+ * S3へのアップロード
  */
 export const uploadToS3 = async (url: string, blob: Blob, onProgress?: (p: number) => void) => {
   await axios.put(url, blob, {
-    headers: { 'Content-Type': blob.type },
+    headers: {
+      'Content-Type': 'video/webm',
+    },
     onUploadProgress: (e) => {
-      const percent = Math.round((e.loaded * 100) / (e.total ?? 1));
+      const percent = Math.round((e.loaded * 100) / (e.total ?? 1)); // 何バイト送ったか監視
       onProgress?.(percent);
-    }
+    },
   });
 };
 
@@ -101,5 +44,18 @@ export const uploadToS3 = async (url: string, blob: Blob, onProgress?: (p: numbe
  */
 export const checkAnalysisStatus = async (answerId: string): Promise<AnalysisResponse> => {
   const { data } = await client.get<AnalysisResponse>(`/answers/${answerId}`);
+  return data;
+};
+
+/**
+ * 履歴一覧の取得
+ */
+export const fetchHistory = async (
+  page: number = 1,
+  limit: number = 6,
+): Promise<HistoryResponse> => {
+  const { data } = await client.get<HistoryResponse>('/answers', {
+    params: { page, limit },
+  });
   return data;
 };

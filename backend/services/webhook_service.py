@@ -60,9 +60,7 @@ def process_video(recording_key, s3):
 
 
 def notify_completion(audio_key, attempt_public_id):
-    print(f"Audio upload completed: {audio_key}")
 
-    
     requests.post(f"http://localhost:8000/webhooks/{attempt_public_id}/generate", json={"voiceStorageKey": audio_key})
 
 
@@ -76,3 +74,4 @@ def extract_attempt_public_id(recording_key: str) -> str:
     attempt_public_id = name_without_ext.split("_")[0]
 
     return attempt_public_id
+

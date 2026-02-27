@@ -1,6 +1,6 @@
 from sqlalchemy import VARCHAR, Integer, DateTime, ForeignKey, text, func
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.dialects.mysql import INTEGER
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.mysql import INTEGER, BIGINT
 from datetime import datetime
 from database import Base
 
@@ -49,3 +49,4 @@ class Recording(Base):
         server_default=func.current_timestamp()
     )
 
+    attempt = relationship("Attempt", back_populates="recording")

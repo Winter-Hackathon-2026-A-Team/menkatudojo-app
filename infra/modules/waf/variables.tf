@@ -8,14 +8,14 @@ variable "alb_arn" {
   type        = string
 }
 
-variable "allowed_ip_ranges" {
-  description = "許可するIPアドレス範囲のリスト"
-  type        = list(string)
-  default     = []
-}
-
 variable "rate_limit" {
   description = "レート制限（1分あたりのリクエスト数）"
   type        = number
   default     = 1000
+}
+
+variable "allowed_ip_ranges" {
+  description = "Allowed IP address ranges"
+  type        = list(string)
+  default     = []
 }

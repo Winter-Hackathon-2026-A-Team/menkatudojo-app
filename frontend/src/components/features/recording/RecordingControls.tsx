@@ -1,5 +1,7 @@
 import { RecordingState } from '@/types/recording';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import ReplayIcon from '@mui/icons-material/Replay';
 import StopIcon from '@mui/icons-material/Stop';
 import { Button, CircularProgress, Stack } from '@mui/material';
 
@@ -24,11 +26,17 @@ export const RecordingControls = ({
   switch (state.phase) {
     case 'completed':
       return (
-        <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={3} justifyContent="center" alignItems={"center"}>
+        <Stack
+          direction={{ xs: 'column-reverse', sm: 'row' }}
+          spacing={3}
+          justifyContent="center"
+          alignItems={'center'}
+        >
           <Button
             variant="outlined"
             onClick={onReset}
-            sx={{ color: 'white', borderColor: 'white', width:{ xs: '90%', sm: 230 }}}
+            startIcon={<ReplayIcon />}
+            sx={{ color: 'white', borderColor: 'white', width: { xs: '90%', sm: 230 } }}
           >
             もう一度練習する
           </Button>
@@ -36,7 +44,8 @@ export const RecordingControls = ({
             variant="contained"
             color="primary"
             onClick={onConfirm}
-            sx={{ width: { xs: '90%', sm: 230 }}}
+            startIcon={<AutoAwesomeIcon />}
+            sx={{ width: { xs: '90%', sm: 230 } }}
           >
             フィードバックを受ける
           </Button>
@@ -77,8 +86,8 @@ export const RecordingControls = ({
           >
             {state.phase === 'recording' ? (
               <StopIcon sx={{ fontSize: 40 }} />
-              // initializing: ローディング中...
-            ) : state.phase === 'initializing' ? (
+            ) : // initializing: ローディング中...
+            state.phase === 'initializing' ? (
               <CircularProgress size={32} color="inherit" />
             ) : (
               <PlayArrowIcon sx={{ fontSize: 40, ml: 0.5 }} />
