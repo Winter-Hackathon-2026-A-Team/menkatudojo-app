@@ -1,7 +1,7 @@
-from sqlalchemy import String, DateTime, ForeignKey, Index
+from sqlalchemy import String, DateTime, ForeignKey, Index, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.mysql import INTEGER
-
+from datetime import datetime
 from database import Base
 
 class Session(Base):
@@ -33,6 +33,20 @@ class Session(Base):
         DateTime, 
         nullable=True
     )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        server_default=func.current_timestamp()
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        server_default=func.current_timestamp()
+    )
+    
+
     user = relationship("User", lazy="joined")
     __table_args__ = (
         Index("ix_sessions_user_id", "user_id"),

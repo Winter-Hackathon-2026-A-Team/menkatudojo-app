@@ -1,8 +1,19 @@
-from sqlalchemy import VARCHAR, Integer, DateTime, ForeignKey, text, func
+
+from __future__ import annotations
+import enum
+from sqlalchemy import VARCHAR, Integer, DateTime, ForeignKey, text, func, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from sqlalchemy.dialects.mysql import INTEGER, CHAR, SMALLINT
 from datetime import datetime
 from database import Base
+
+class AttemptStatus(str, enum.Enum):
+    CREATED = "CREATED"
+    UPLOADED = "UPLOADED"
+    TRANSCRIBED = "TRANSCRIBED"
+    FEEDBACKED = "FEEDBACKED"
+    ERROR = "ERROR"
 
 
 class Attempt(Base):

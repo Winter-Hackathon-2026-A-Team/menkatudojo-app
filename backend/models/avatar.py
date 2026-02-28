@@ -19,6 +19,11 @@ class Avatar(Base):
         nullable=False
     )
 
+    description: Mapped[str] = mapped_column(
+        Text,
+        nullable=False
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,

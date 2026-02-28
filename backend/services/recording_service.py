@@ -3,10 +3,11 @@ from models.attempt import Attempt
 from models.recording import Recording
 from models.avatar import Avatar
 from models.feedback import Feedback
+from models.transcript import Transcript
 from datetime import datetime
 from config.settings import settings
 from zoneinfo import ZoneInfo
-
+from sqlalchemy import select
 
 
 async def create_presigned_url(db, s3, user, req):
@@ -16,6 +17,8 @@ async def create_presigned_url(db, s3, user, req):
     recording = await _create_recording_record(db, attempt)
     # フィードバックレコード生成
     feedback = await _create_feedback_record(db, attempt, req)
+    # 
+    transcript = await _create_transcript_record(db, attempt, req)
 
     try:
         presigned_url = s3.generate_presigned_url(
@@ -72,9 +75,48 @@ async def _create_feedback_record(db, attempt, req):
        avatar_id=req.characterConfig.avatarId,
        good_points="",
        improve_points="",
+       grade="A"
+
     )
 
     db.add(feedback)
     await db.flush()
 
     return feedback
+
+async def _create_transcript_record(db, attempt, req):
+    transcript = Transcript(
+       attempt_id=attempt.id,
+       text=""
+    )
+
+    db.add(transcript)
+    await db.flush()
+
+    return transcript
+
+class RecordingService:
+    def __init__(self, db):
+        self.db = db
+
+    async def upsert_recording(self, attempt_id: int, storage_key: str, mime_type: str, size_bytes: int):
+        stmt = select(Recording).where(Recording.attempt_id == attempt_id)
+        result = await self.db.execute(stmt)
+        rec = result.scalar_one_or_none()
+
+        if rec is None:
+            rec = Recording(attempt_id=attempt_id, storage_key=storage_key)
+            if hasattr(rec, "mime_type"):
+                rec.mime_type = mime_type
+            if hasattr(rec, "size_bytes"):
+                rec.size_bytes = size_bytes
+            self.db.add(rec)
+        else:
+            rec.storage_key = storage_key
+            if hasattr(rec, "mime_type"):
+                rec.mime_type = mime_type
+            if hasattr(rec, "size_bytes"):
+                rec.size_bytes = size_bytes
+
+        await self.db.commit()
+        return rec

@@ -11,6 +11,8 @@ from models.user import User
 import math
 from core.exceptions import ForbiddenError
 from config.settings import settings
+import boto3
+from botocore.client import Config
 
 async def get_history_list(db, user, page, limit):
     
@@ -101,6 +103,16 @@ async def get_history_list(db, user, page, limit):
 
 async def get_history_detail(db, user, s3, answer_id):
 
+    if settings.DEBUG:
+        s3 = boto3.client(
+                "s3",
+                endpoint_url="http://minio:9000",  # MinIO
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_REGION_NAME,  # 形式上必須
+                config=Config(signature_version="s3v4"),
+            )
+
     stmt = (
         select(
             Attempt.public_id.label("public_id"),
@@ -135,6 +147,8 @@ async def get_history_detail(db, user, s3, answer_id):
     # 存在しない or 他人のデータ
     if row is None:
         raise ForbiddenError()
+
+    
 
     video_url = s3.generate_presigned_url(
         "get_object",

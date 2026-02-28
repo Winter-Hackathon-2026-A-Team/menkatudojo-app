@@ -7,7 +7,7 @@ from services import recording_service, history_service
 from database import get_db
 from core.s3_client import get_s3_client
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from services import feedback_service
 
 router = APIRouter(prefix="/api/answers", tags=["answers"])
 
@@ -28,6 +28,17 @@ async def create_presigned_url(
     
     return await recording_service.create_presigned_url(db, s3, current_user, req)
     
+
+@router.get("/{attempt_public_id}")
+async def get_feedback(
+    attempt_public_id: str,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+    s3 = Depends(get_s3_client)
+):
+    
+    return await feedback_service.get_feedback(db, s3, user, attempt_public_id)
+
 
 # 履歴一覧
 @router.get("", response_model=HistoryListResponse)

@@ -21,8 +21,17 @@ from routers.auth import router as auth_router
 from routers.answers import router as answers_router
 from routers.questions import router as questions_router
 from routers.categories import router as categories_router
+from routers.attempts import router as attempts_router
+from routers.feedbacks import router as feedbacks_router
+from routers.webhooks import router as webhooks_router
+from services.attempt_service import AttemptService
+from services.recording_service import RecordingService
+from services.transcript_service import TranscriptService
+from services.feedback_service import FeedbackService
 from routers.users import router as user_router
 from fastapi.openapi.utils import get_openapi
+from faster_whisper import WhisperModel
+import google.generativeai as genai
 
 def custom_openapi():
     if app.openapi_schema:
@@ -72,8 +81,21 @@ async def lifespan(app: FastAPI):
             #ヘルスチェック(SELECT 1)で疎通確認
             await conn.execute(text("SELECT 1"))
         logger.info("Database connection successful.")
+
+        # Whisper モデル読み込み
+        app.state.whisper_model = WhisperModel(
+            "base",
+            device="cpu",
+            compute_type="int8"
+        )
+        logger.info("Whisper model loaded.")
+
+        # Gemini
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        app.state.gemini_model = genai.GenerativeModel(settings.GEMINI_MODEL_NAME)
+
     except Exception as e:
-        logger.error(f"Database connection failed: {e}")
+        logger.error(f"startup failed: {e}")
 
     #アプリが終了するまで待機
     yield
@@ -116,7 +138,7 @@ app.add_middleware(
 app.add_middleware(
     CSRFMiddleware,
     exempt_paths={"/docs", "/openapi.json"},
-    protect_prefixes=("/api",)
+    protect_prefixes=("/api",),
 )
 
 #CORS設定
@@ -132,11 +154,15 @@ app.add_middleware(
 )
 
 
+
 #認証ルーターを登録
 app.include_router(auth_router)
 app.include_router(answers_router)
 app.include_router(questions_router)
 app.include_router(categories_router)
+app.include_router(attempts_router)
+app.include_router(feedbacks_router)
+app.include_router(webhooks_router)
 app.include_router(user_router)
 
 # Swagger UI設定

@@ -4,12 +4,6 @@ from config.settings import settings
 
 # router側で、
 def get_s3_client():
-    
-    # 開発用に一時的に
-    print("AWS_ACCESS_KEY_ID:", settings.AWS_ACCESS_KEY_ID)
-    print("AWS_SECRET_ACCESS_KEY:", settings.AWS_SECRET_ACCESS_KEY)
-    print("S3_ENDPOINT_URL:", settings.S3_ENDPOINT_URL)
-
 
 
     return boto3.client(

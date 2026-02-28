@@ -33,7 +33,7 @@ class Recording(Base):
     )
 
     size_bytes: Mapped[int] = mapped_column(
-        BIGINT(unsigned=True),
+        INTEGER(unsigned=True),
         nullable=True
     )
 

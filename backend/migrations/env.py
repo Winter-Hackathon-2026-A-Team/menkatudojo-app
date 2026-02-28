@@ -1,10 +1,12 @@
 from logging.config import fileConfig
 from sqlalchemy import create_engine, pool
 from alembic import context
+
 import os
 
 from database import Base
 from models import user, session, attempt, avatar, feedback, question, recording, category, transcript
+
 
 config = context.config
 

@@ -1,8 +1,8 @@
 """Table再生成
 
-Revision ID: 47641aedd2cb
+Revision ID: 2350e31c724e
 Revises: 
-Create Date: 2026-02-25 21:32:57.246518
+Create Date: 2026-02-25 22:54:56.292029
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
-revision: str = '47641aedd2cb'
+revision: str = '2350e31c724e'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,6 +24,7 @@ def upgrade() -> None:
     op.create_table('avatars',
     sa.Column('id', mysql.INTEGER(unsigned=True), autoincrement=True, nullable=False),
     sa.Column('personality_id', mysql.INTEGER(unsigned=True), nullable=False),
+    sa.Column('description', sa.Text(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -46,6 +47,8 @@ def upgrade() -> None:
     sa.Column('username', sa.String(length=255), nullable=False),
     sa.Column('password', sa.String(length=255), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
     sa.UniqueConstraint('public_id')
@@ -73,6 +76,8 @@ def upgrade() -> None:
     sa.Column('expires_at', sa.DateTime(), nullable=False),
     sa.Column('revoked_at', sa.DateTime(), nullable=True),
     sa.Column('last_accessed_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('session_id')
@@ -102,8 +107,8 @@ def upgrade() -> None:
     sa.Column('good_points', sa.Text(), nullable=False),
     sa.Column('improve_points', sa.Text(), nullable=False),
     sa.Column('next_tip', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('grade', sa.Enum('A', 'B', 'C'), nullable=True),
     sa.Column('model_name', sa.VARCHAR(length=100), nullable=True),
-    sa.Column('grade', sa.Enum('A', 'B', 'C'), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.ForeignKeyConstraint(['attempt_id'], ['attempts.id'], ondelete='CASCADE'),
@@ -116,7 +121,7 @@ def upgrade() -> None:
     sa.Column('attempt_id', mysql.INTEGER(unsigned=True), nullable=False),
     sa.Column('storage_key', sa.VARCHAR(length=600), nullable=False),
     sa.Column('mime_type', sa.VARCHAR(length=50), server_default=sa.text("'video/webm'"), nullable=False),
-    sa.Column('size_bytes', mysql.BIGINT(unsigned=True), nullable=True),
+    sa.Column('size_bytes', mysql.INTEGER(unsigned=True), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.ForeignKeyConstraint(['attempt_id'], ['attempts.id'], ondelete='CASCADE'),
@@ -151,11 +156,11 @@ def upgrade() -> None:
     """)
 
     op.execute("""
-        INSERT INTO avatars (id, personality_id)
+        INSERT INTO avatars (id, personality_id, description)
         VALUES
-        (1, 1),
-        (2, 2),
-        (3, 3)
+        (1, 1, '前向きな気持ちで続けられるよう支えてくれる師範'),
+        (2, 2, 'ユーザーが自身の熱量を表現できているかを評価する師範'),
+        (3, 3, '回答に論理的な整合性があるかを評価する師範')
     """)
 
     # password: hogehoge

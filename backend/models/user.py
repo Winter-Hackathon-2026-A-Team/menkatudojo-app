@@ -1,7 +1,7 @@
-from sqlalchemy import String, Boolean
+from sqlalchemy import String, Boolean, func, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.mysql import INTEGER
-
+from datetime import datetime
 from database import Base
 
 class User(Base):
@@ -34,6 +34,18 @@ class User(Base):
         Boolean, 
         default=True, 
         nullable=False
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        server_default=func.current_timestamp()
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        server_default=func.current_timestamp()
     )
 
     attempts = relationship("Attempt", back_populates="user")

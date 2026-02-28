@@ -6,7 +6,7 @@ ARG UID
 ARG GID
 
 #パッケージインストール、ユーザ作成、
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
     build-essential \
     && groupadd -g $GID $GROUPNAME \
     && useradd -m -s /bin/bash -u $UID -g $GROUPNAME $USERNAME \
