@@ -17,4 +17,4 @@
  備考：
 - 今後の構成によってはbaseURLを.envから取得、およびDockerfileの修正を検討
 
-設計の詳細は [こちら（docs/frontend/structure.md）](./docs/frontend/structure.md) を参照してください。
+設計の詳細は [こちら（docs/frontend/structure.md）](../docs/frontend/structure.md) を参照してください。
