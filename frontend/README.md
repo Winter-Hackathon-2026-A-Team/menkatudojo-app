@@ -15,7 +15,6 @@
 - theme/: MUIのテーマの一元管理
 - types/: TypeScriptの型定義
  備考：
-- 今後の構成によってはbaseURLを.envから取得、およびDockerfileの修正を検討 
+- 今後の構成によってはbaseURLを.envから取得、およびDockerfileの修正を検討
 
-### 詳細なファイル構成と設計方針
-設計の詳細は [docs/frontend/structure.md](./docs/frontend/structure.md) を参照してください。
+設計の詳細は [こちら（docs/frontend/structure.md）](./docs/frontend/structure.md) を参照してください。
