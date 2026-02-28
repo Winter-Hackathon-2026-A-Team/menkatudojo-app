@@ -41,6 +41,7 @@
 ## 1) 環境変数ファイル.envの作成
 
 .env.exampleをコピーして、.envファイルをプロジェクトルートディレクトリ直下に保存する。
+
 注）.envファイルは必ず、.env.exampleファイルと同じ階層に保存すること。（Dockerの設定ファイルで環境変数.envのファイルパスを指定しているため。）
 
 ```
@@ -128,11 +129,15 @@ docker compose exec backend alembic upgrade head
 ```
 
 MinIO Webhook 設定（AI分析のトリガー設定）
+
 録画ファイルのアップロードを検知してAI分析を開始するための設定。
+
 ※ mc (MinIO Client) のインストールが必要。詳細は末尾の補足を参照。
 
 エイリアスの設定（MinIOへの接続定義）
+```
 mc alias set localminio http://localhost:9000 admin password123
+```
 
 Webhook通知先エンドポイントの設定
 ```
@@ -156,6 +161,7 @@ mc event add localminio/dev-bucket arn:minio:sqs:us-east-1:1:webhook --event put
 ## ①バックエンドの疎通確認
 
 ブラウザまたは`curl`でアクセスし、JSONが返ってくるか確認。
+
 注意: ヘルスチェック専用ページを確認する場合は、frontend/src/app.tsx 内の以下の箇所のコメントアウトを外す。
 ```
 <Route path="/dev/health" element={<HealthCheckPage />} />
@@ -224,6 +230,7 @@ make down
 
 # 補足
 MinIO Client(mc)のインストール
+
 Mac(Apple Silicon)
 ```
 curl -O https://dl.min.io/client/mc/release/darwin-arm64/mc
