@@ -1,20 +1,19 @@
 import { EmptyContentView } from '@/components/common/EmptyContentView';
-import { ErrorView } from '@/components/common/ErrorView';
 import { LoadingView } from '@/components/common/LoadingView';
+import { PageErrorHandler } from '@/components/common/PageErrorHandler';
 import { CreateQuestionModal } from '@/components/features/questions/CreateQuestionModal';
 import { QuestionList } from '@/components/features/questions/QuestionList';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMessage } from '@/contexts/MessageContext';
 import { useGroupedQuestions } from '@/hooks/useGroupedQuestions';
-import { getErrorMessage } from '@/utils/errorHandlers';
 import { getRandomQuestionId } from '@/utils/questionUtils';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
 import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined';
 import { Box, Button, Stack, Typography } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 export const QuestionSelectionPage = () => {
@@ -22,23 +21,37 @@ export const QuestionSelectionPage = () => {
   const { showMessage } = useMessage();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [questionId, setQuestionId] = useState<number | null>(null);
-  // server state管理（TanStack Query）
-  const {
-    data: groupedQuestions,
-    isPending,
-    isError,
-    error,
-    refetch,
-    isCriticalError,
-    isClientError,
-  } = useGroupedQuestions();
 
-  const categories = useMemo(() => Object.keys(groupedQuestions || []), [groupedQuestions]);
+  // 1. データ取得
+  const { data: groupedQuestions, isLoading, error, refetch } = useGroupedQuestions();
+
+  const categories = useMemo(() => {
+    if (!groupedQuestions) return [];
+    return Object.keys(groupedQuestions);
+  }, [groupedQuestions]);
+
+  // 3. Early Return（ガード節）：ここから下は安全に描画を制限する
+  if (isLoading) return <LoadingView />;
+
+  if (error) {
+    return <PageErrorHandler error={error} onRetry={refetch} />;
+  }
+
+  // データが正常に取得できたが、中身が空の場合
+  if (!groupedQuestions || Object.keys(groupedQuestions).length === 0) {
+    return (
+      <EmptyContentView
+        title="質問が登録されていません"
+        message="練習を始めるには、まず右上のボタンから質問を作成してください。"
+        actionText="質問を作成する"
+        onRetry={() => setIsCreateModalOpen(true)}
+      />
+    );
+  }
+
+  // --- 正常系 ---
 
   const handleRandomSelect = () => {
-    // データが存在しない場合は中断
-    if (!groupedQuestions) return;
-
     const randomId = getRandomQuestionId(groupedQuestions);
 
     if (randomId !== null) {
@@ -48,39 +61,9 @@ export const QuestionSelectionPage = () => {
     }
   };
 
-  // 関数：質問を選択する
   const handleSelect = (id: number) => {
     setQuestionId((prev) => (prev === id ? null : id));
   };
-
-  // 400系エラーのみ、副作用としてメッセージを出力
-  useEffect(() => {
-    if (isError && !isCriticalError) {
-      showMessage(getErrorMessage(error), 'error');
-    }
-  }, [isError, isCriticalError, error, showMessage]);
-
-  // 初期は読み込み中を出力
-  if (isPending) return <LoadingView />;
-
-  // 500系エラー
-  if (isCriticalError) {
-    return (
-      <MainLayout>
-        <ErrorView message={getErrorMessage(error)} onRetry={refetch} />
-      </MainLayout>
-    );
-  }
-
-  // データが空、または400系エラー時の表示
-  if (isClientError) {
-    return (
-      <EmptyContentView
-        message="指定された質問が見つかりません。"
-        onRetry={() => navigate('/questions')}
-      />
-    );
-  }
 
   return (
     <MainLayout>
@@ -91,7 +74,7 @@ export const QuestionSelectionPage = () => {
               onClick={() => navigate(-1)}
               startIcon={<ArrowBackIcon />}
               sx={{ color: 'text.primary' }}
-            ></Button>
+            />
             <Box
               sx={{
                 borderRadius: 0.5,
@@ -115,6 +98,7 @@ export const QuestionSelectionPage = () => {
           </Button>
         }
       />
+
       <QuestionList
         groupedQuestions={groupedQuestions}
         questionId={questionId}
@@ -168,16 +152,13 @@ export const QuestionSelectionPage = () => {
           sx={{
             minWidth: 230,
             transition: 'all 0.3s ease-in-out',
-            '&:hover': {
-              transform: 'translateY(-2px)',
-              boxShadow: 3,
-            },
+            '&:hover': { transform: 'translateY(-2px)', boxShadow: 3 },
           }}
         >
           選択した質問で練習を開始
         </Button>
       </Stack>
-      {/* 4. モーダル本体の配置 */}
+
       <CreateQuestionModal
         open={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

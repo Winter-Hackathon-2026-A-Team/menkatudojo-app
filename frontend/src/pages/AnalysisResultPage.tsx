@@ -7,17 +7,30 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PlayArrowOutlinedIcon from '@mui/icons-material/PlayArrowOutlined';
 import { Box, Button, Divider, Stack, Typography } from '@mui/material';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { EmptyContentView } from '@/components/common/EmptyContentView';
+import { PageErrorHandler } from '@/components/common/PageErrorHandler';
 
 export const AnalysisResultPage = () => {
   const { answerId } = useParams<{ answerId: string }>();
   const navigate = useNavigate();
-  const { data, isLoading, isError } = useAnalysisResult(answerId);
+  const { data, isLoading, error, refetch } = useAnalysisResult(answerId);
 
   if (isLoading) return <LoadingView />;
-  if (isError || !data) return <Navigate to="/questions" replace />;
 
-  if (data.analysisStatus !== 'completed' || !data.feedback) {
-    return <Box p={4}>分析が完了していません。再度時間をおいて確認してください。</Box>;
+  if (error) {
+    return <PageErrorHandler error={error} onRetry={refetch} />;
+  }
+
+  // 3. データはあるが分析が終わっていない場合（ここだけ固有の判定）
+  if (data?.analysisStatus !== 'completed' || !data.feedback)  {
+    return (
+      <EmptyContentView
+        title="分析結果を準備中です"
+        message="AIが動画を解析しています。1分ほど経ってから再度ご確認ください。"
+        onRetry={refetch}
+        actionText="最新の状態を確認する"
+      />
+    );
   }
 
   const handleNextTraining = () => {

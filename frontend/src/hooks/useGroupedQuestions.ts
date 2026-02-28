@@ -1,11 +1,9 @@
-// 質問取得後のデータ整形、エラー分岐
 import { fetchQuestionData } from '@/api/questions';
 import { Question } from '@/types/question';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 
 export const useGroupedQuestions = () => {
-  const query = useQuery({
+  return useQuery({
     queryKey: ['questions'],
     queryFn: fetchQuestionData,
     staleTime: Infinity,
@@ -19,16 +17,10 @@ export const useGroupedQuestions = () => {
         {} as Record<string, Question[]>,
       );
     },
+    retry: (failureCount, error: any) => {
+      const status = error.response?.status;
+      if (status === 401 || status === 403 || status === 404) return false;
+      return failureCount < 2;
+    },
   });
-
-  // エラーオブジェクトからステータスコードを取得
-  const status = axios.isAxiosError(query.error) ? query.error.response?.status : undefined;
-
-  return {
-    ...query,
-    // 500系、またはレスポンスが返ってこないネットワークエラー
-    isCriticalError: query.isError && (!status || status >= 500),
-    // クライアント側で対処可能なエラー
-    isClientError: query.isError && status !== undefined && status >= 400 && status < 500,
-  };
 };

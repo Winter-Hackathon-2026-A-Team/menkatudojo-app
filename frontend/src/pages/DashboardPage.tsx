@@ -1,11 +1,12 @@
 import { LoadingView } from '@/components/common/LoadingView'; // 共通部品
+import { PageErrorHandler } from '@/components/common/PageErrorHandler';
 import { HistoryCard } from '@/components/features/history/HistoryCard';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboard } from '@/hooks/useDashboard'; // 新設するフック
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined';
-import { Alert, Box, Button, Container, Grid, Stack, Typography } from '@mui/material';
+import { Box, Button, Container, Grid, Stack, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
 const StatItem = ({
@@ -36,35 +37,25 @@ const StatItem = ({
 
 export const DashboardPage = () => {
   const { user } = useAuth();
+  const { data, isLoading, error, refetch } = useDashboard();
 
-  const { data, isLoading, isError, refetch } = useDashboard();
-
-  // 1. ローディング状態（共通コンポーネントを使用）
+  // 1. ローディング状態
   if (isLoading) return <LoadingView />;
 
-  // 2. エラー状態（refetch を再試行ボタンに渡す）
-  if (isError || !data) {
+  if (error) {
     return (
       <MainLayout>
         <Container sx={{ mt: 4 }}>
-          <Alert
-            severity="error"
-            action={
-              <Button color="inherit" size="small" onClick={() => refetch()}>
-                再試行
-              </Button>
-            }
-          >
-            データの取得に失敗しました。
-          </Alert>
+          <PageErrorHandler error={error} onRetry={refetch} />
         </Container>
       </MainLayout>
     );
   }
 
+  if (!data) return null;
+
   const { stats, latestAnswers } = data;
   const totalMinutes = Math.floor(stats.totalDurationSeconds / 60);
-
   return (
     <MainLayout>
       <Container sx={{ py: 4 }}>

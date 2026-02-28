@@ -1,4 +1,5 @@
 import { ErrorView } from '@/components/common/ErrorView';
+import { PageErrorHandler } from '@/components/common/PageErrorHandler';
 import { AnalysisOverlay } from '@/components/features/recording/AnalysisOverlay';
 import { RecordingControls } from '@/components/features/recording/RecordingControls';
 import { RecordingHeader } from '@/components/features/recording/RecordingHeader';
@@ -10,7 +11,6 @@ import { useQuestion } from '@/hooks/useQuestion';
 import { useRecording } from '@/hooks/useRecording';
 import { useUploadAnswer } from '@/hooks/useUploadAnswer';
 import { AnalysisResponse } from '@/types/recording';
-import { getErrorMessage } from '@/utils/errorHandlers';
 import {
   Box,
   Button,
@@ -136,7 +136,7 @@ export const InterviewSessionPage = () => {
   // 7. 早期リターンによるエラーハンドリング
 
   // A. APIからの質問取得エラー
-  if (isQuestionError) {
+  if (questionError) {
     return (
       <Box
         sx={{
@@ -147,7 +147,7 @@ export const InterviewSessionPage = () => {
           justifyContent: 'center',
         }}
       >
-        <ErrorView message={getErrorMessage(questionError)} onRetry={() => refetchQuestion()} />
+        <PageErrorHandler error={questionError} onRetry={refetchQuestion} />
       </Box>
     );
   }

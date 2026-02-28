@@ -9,13 +9,11 @@ import { LoginPage } from '@/pages/LoginPage';
 import { QuestionSelectionPage } from '@/pages/QuestionSelectionPage';
 import { SignupPage } from '@/pages/SignupPage';
 import { TopPage } from '@/pages/TopPage';
-import { HealthCheckPage } from '@/pages/dev/HealthCheckPage';
 import { theme } from '@/theme/theme';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { HistoryPage } from './pages/HistoryPage';
 
 const queryClient = new QueryClient();
@@ -24,14 +22,14 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <AuthProvider>
-          <MessageProvider>
-            <BrowserRouter>
+        <BrowserRouter>
+          <AuthProvider>
+            <MessageProvider>
               <Routes>
                 <Route path="/" element={<TopPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
-                <Route path="/dev/health" element={<HealthCheckPage />} />
+                {/* <Route path="/dev/health" element={<HealthCheckPage />} /> */}
 
                 <Route element={<AuthGuard />}>
                   <Route path="/dashboard" element={<DashboardPage />} />
@@ -42,11 +40,11 @@ function App() {
                   <Route path="/history" element={<HistoryPage />} />
                 </Route>
               </Routes>
-            </BrowserRouter>
-          </MessageProvider>
-        </AuthProvider>
+            </MessageProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </ThemeProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {/* {<ReactQueryDevtools initialIsOpen={false} />} */}
     </QueryClientProvider>
   );
 }
