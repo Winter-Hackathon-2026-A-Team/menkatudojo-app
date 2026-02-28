@@ -2,11 +2,18 @@
 
 ### 面カツ道場<br></br>
 
+> [!IMPORTANT]
+> **本プロジェクトの現状について**
+> 現在、本リポジトリは **ローカル開発環境（Docker）での動作** を前提としています。
+> インフラ構成定義（Terraform）の実装は完了していますが、実際のクラウドデプロイメントは次期フェーズのタスクとして定義されています。
+
+
 # 開発環境
 
 - Python 3.13 &nbsp;&nbsp; # 最新の安定バージョン
 - Node 22 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # 最新のLTSバージョン
 - MySQL 8.4 &nbsp;&nbsp;&nbsp; # AWS RDS MySQLのLTS(8.4)と整合<br>
+
 
 # ディレクトリ構成
 
@@ -35,6 +42,7 @@
 ├── Makefile                # 開発効率化のためのショートカットコマンド集
 └── README.md               # プロジェクト全体の概要・起動手順（本ファイル）
 ```
+
 
 # 開発環境起動から終了までの手順
 
@@ -156,6 +164,7 @@ mc admin service restart localminio
 mc event add localminio/dev-bucket arn:minio:sqs:us-east-1:1:webhook --event put --suffix .webm
 ```
 
+
 # 疎通確認
 
 ## ①バックエンドの疎通確認
@@ -227,6 +236,7 @@ docker compose down
 ```
 make down
 ```
+
 
 # 補足
 MinIO Client(mc)のインストール
