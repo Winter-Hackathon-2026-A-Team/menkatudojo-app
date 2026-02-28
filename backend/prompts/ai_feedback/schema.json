@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "good_points": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "improve_points": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "next_tip": { "type": "string", "maxLength": 255 },
+    "grade": { "type": "string", "enum": ["A", "B", "C"] }
+  },
+  "required": ["good_points", "improve_points", "next_tip", "grade"]
+}

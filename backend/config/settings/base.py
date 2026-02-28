@@ -1,4 +1,8 @@
 from pydantic_settings import BaseSettings
+import os
+
+SESSION_EXPIRE_DAYS = int(os.getenv("SESSION_EXPIRE_DAYS", "7"))
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 
 class Settings(BaseSettings):
     APP_NAME: str = "menkatudojo-App"
@@ -7,7 +11,19 @@ class Settings(BaseSettings):
     #CORSを許可するURLのリスト。Pydanticが文字列を変換してくれる
     CORS_ORIGINS: list[str] = []
     DEBUG: bool = False
-
+    ALLOW_RECORDING_MIME_TYPE: str
+    MAX_RECORDING_FILESIZE: int
+    MAX_RECORDING_DURATION_S: int
+    AWS_ACCESS_KEY_ID: str
+    AWS_SECRET_ACCESS_KEY: str
+    AWS_REGION_NAME: str
+    S3_ENDPOINT_URL: str | None = None
+    S3_BUCKET_NAME: str
+    TZ: str
+    GEMINI_API_KEY: str
+    GEMINI_MODEL_NAME: str
+    # AI_FEEDBACK_MODE: str = os.getenv("AI_FEEDBACK_MODE", "gemini")
+    
     class Config:
         env_file = ".env"
 
